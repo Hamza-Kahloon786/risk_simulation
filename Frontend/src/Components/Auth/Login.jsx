@@ -206,13 +206,13 @@ const Login = () => {
             </div>
 
             {/* Demo Credentials */}
-            <div className="mt-6 p-4 bg-[#0B0F1A] rounded-lg border border-white/10">
+            {/* <div className="mt-6 p-4 bg-[#0B0F1A] rounded-lg border border-white/10">
               <h3 className="text-sm font-medium text-[#9CA3B0] mb-2">Demo Credentials</h3>
               <div className="space-y-1 text-xs text-gray-400">
                 <p>Email: demo@risksim.com</p>
                 <p>Password: Demo123!</p>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </main>
