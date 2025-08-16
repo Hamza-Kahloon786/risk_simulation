@@ -27,7 +27,7 @@ ENV REFRESH_TOKEN_EXPIRE_DAYS=70
 ENV BASE_URL=http://localhost:8000
 ENV FRONTEND_URL=http://localhost:5173
 
-RUN echo '#!/bin/bash\nexport PORT=${PORT:-8000}\npython -m uvicorn app.main:app --host 0.0.0.0 --port $PORT' > start.sh && chmod +x start.sh
+RUN echo '#!/bin/bash\nexport PORT=${PORT:-8080}\npython -m uvicorn app.main:app --host 0.0.0.0 --port $PORT' > start.sh && chmod +x start.sh
 
-EXPOSE 8000
+EXPOSE 8080
 CMD ["./start.sh"]
