@@ -4,6 +4,9 @@ WORKDIR /app/frontend
 COPY Frontend/package*.json ./
 RUN npm ci
 COPY Frontend/ ./
+# Add cache busting
+ARG BUILD_TIME
+ENV BUILD_TIME=$BUILD_TIME
 RUN npm run build
 
 # Python backend
