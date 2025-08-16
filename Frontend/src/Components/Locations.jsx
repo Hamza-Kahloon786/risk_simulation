@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 
 // API base URL - adjust this to match your backend
-const API_BASE_URL = 'http://localhost:8000/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://selfless-flow-production.up.railway.app/api'
 
 const LocationsManager = () => {
   const [locations, setLocations] = useState([])
