@@ -1,5 +1,4 @@
 # backend/app/main.py - FIXED ROUTE REGISTRATION
-from fastapi import FastAPI, HTTPException
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -28,7 +27,9 @@ app.add_middleware(
 
 # Serve React build files (only if static directory exists)
 if os.path.exists("static"):
-    app.mount("/static", StaticFiles(directory="static"), name="static")
+    from fastapi.staticfiles import StaticFiles
+    app.mount("/static", StaticFiles(directory="static", html=True), name="static")
+    app.mount("/assets", StaticFiles(directory="static/assets"), name="assets")
 
 # Initialize database
 @app.on_event("startup")
@@ -76,15 +77,20 @@ async def options_handler(path: str):
 # Serve React app for all other routes (must be last)
 @app.get("/{full_path:path}")
 async def serve_react_app(full_path: str):
+    # Serve static assets directly without catch-all
+    if full_path.startswith("assets/"):
+        return FileResponse(f"static/{full_path}")
+    
     # Don't interfere with API routes
     if full_path.startswith("api"):
+        from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="API route not found")
     
-    # Check if static directory and index.html exist
+    # Serve React app for all other routes
     if os.path.exists("static/index.html"):
-        return FileResponse("static/index.html")
+        return FileResponse("static/index.html", media_type="text/html")
     else:
-        return {"message": "React app not built yet. Run 'docker build' for production."}
+        return {"message": "React app not built yet."}
 
 if __name__ == "__main__":
     import uvicorn
