@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, User, Building, AlertCircle } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import Header from '../Header'
-import Footer from '../Footer'
+// import Footer from '../Footer'
 import Hero1 from "../../assets/Hero1.jpg"
 
 const Register = () => {
@@ -103,9 +103,11 @@ const Register = () => {
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-[#0B0F1A] text-white flex flex-col">
       <Header />
-      <main className="grid grid-cols-1 md:grid-cols-2 min-h-[calc(100vh-128px)] bg-[#0B0F1A] text-white">
+      
+      {/* Main content with flex-1 to take remaining space */}
+      <main className="flex-1 grid grid-cols-1 md:grid-cols-2 bg-[#0B0F1A] text-white">
         {/* Left Image */}
         <div className="hidden md:block">
           <img
@@ -115,8 +117,8 @@ const Register = () => {
           />
         </div>
 
-        {/* Right Form */}
-        <div className="flex items-center justify-center px-6">
+        {/* Right Form - Added proper padding and centering */}
+        <div className="flex items-center justify-center px-6 py-8 min-h-full">
           <div className="bg-[#101624] p-8 rounded-xl w-full max-w-md shadow-lg border border-white/10">
             <h2 className="text-2xl font-bold mb-6 text-[#E6E8EE]">
               Create Account
@@ -274,8 +276,10 @@ const Register = () => {
           </div>
         </div>
       </main>
-      <Footer />
-    </>
+      
+      {/* Uncomment when you want to add footer back */}
+      {/* <Footer /> */}
+    </div>
   )
 }
 
