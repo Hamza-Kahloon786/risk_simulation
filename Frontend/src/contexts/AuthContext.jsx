@@ -11,7 +11,7 @@ export const useAuth = () => {
   return context
 }
 
-const API_BASE_URL = 'http://localhost:8000/api'
+const API_BASE_URL = 'http://localhost:8080/api'
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
