@@ -1,11 +1,10 @@
-# Add this to your backend/app/routes/defenses.py
-# The route is already there! The issue is the route registration order.
-
-# In your main.py, make sure the routes are registered in the correct order:
-
 # backend/app/main.py - FIXED ROUTE REGISTRATION
+from fastapi import FastAPI, HTTPException
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
 from app.services.database import init_db, close_db
 
 # Import routes
@@ -26,6 +25,10 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+# Serve React build files (only if static directory exists)
+if os.path.exists("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Initialize database
 @app.on_event("startup")
@@ -70,6 +73,19 @@ async def health_check():
 async def options_handler(path: str):
     return {"message": "OK"}
 
+# Serve React app for all other routes (must be last)
+@app.get("/{full_path:path}")
+async def serve_react_app(full_path: str):
+    # Don't interfere with API routes
+    if full_path.startswith("api"):
+        raise HTTPException(status_code=404, detail="API route not found")
+    
+    # Check if static directory and index.html exist
+    if os.path.exists("static/index.html"):
+        return FileResponse("static/index.html")
+    else:
+        return {"message": "React app not built yet. Run 'docker build' for production."}
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8080, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
