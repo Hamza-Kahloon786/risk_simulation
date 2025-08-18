@@ -1,9 +1,14 @@
+// Components/Header.jsx
 import React, { useState } from 'react';
 import { Link } from "react-router-dom";
 import { BarChart3, Menu, X } from "lucide-react";
+import { useAuth } from '../contexts/AuthContext';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // Destructure from your AuthContext
+  const { isAuthenticated, user, logout } = useAuth();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -11,6 +16,15 @@ const Header = () => {
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      closeMobileMenu();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   return (
@@ -36,30 +50,50 @@ const Header = () => {
             >
               Home
             </Link>
-            <Link 
-              to="/scenarios" 
-              className="px-3 py-2 rounded-lg text-sm xl:text-base hover:text-[#3B82F6] hover:bg-white/5 transition-all duration-200 whitespace-nowrap"
-            >
-              Scenarios
-            </Link>
-            <Link 
-              to="/dashboard" 
-              className="px-3 py-2 rounded-lg text-sm xl:text-base hover:text-[#3B82F6] hover:bg-white/5 transition-all duration-200 whitespace-nowrap"
-            >
-              Dashboard
-            </Link>
-            <Link 
-              to="/register" 
-              className="px-3 py-2 rounded-lg text-sm xl:text-base hover:text-[#3B82F6] hover:bg-white/5 transition-all duration-200 whitespace-nowrap"
-            >
-              Sign Up
-            </Link>
-            <Link 
-              to="/login" 
-              className="px-4 py-2 bg-[#3B82F6] text-white rounded-lg text-sm xl:text-base hover:bg-[#2563EB] transition-all duration-200 whitespace-nowrap shadow-lg"
-            >
-              Login
-            </Link>
+            
+            {/* Conditional Navigation based on login status */}
+            {isAuthenticated ? (
+              <>
+                <Link 
+                  to="/dashboard" 
+                  className="px-3 py-2 rounded-lg text-sm xl:text-base hover:text-[#3B82F6] hover:bg-white/5 transition-all duration-200 whitespace-nowrap"
+                >
+                  Dashboard
+                </Link>
+                <Link 
+                  to="/scenarios" 
+                  className="px-3 py-2 rounded-lg text-sm xl:text-base hover:text-[#3B82F6] hover:bg-white/5 transition-all duration-200 whitespace-nowrap"
+                >
+                  Scenarios
+                </Link>
+                {user && (
+                  <span className="px-3 py-2 text-sm xl:text-base text-[#E6E8EE] whitespace-nowrap">
+                    Welcome, {user.full_name || user.name || user.email || 'User'}
+                  </span>
+                )}
+                <button 
+                  onClick={handleLogout}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm xl:text-base hover:bg-red-700 transition-all duration-200 whitespace-nowrap shadow-lg"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link 
+                  to="/register" 
+                  className="px-3 py-2 rounded-lg text-sm xl:text-base hover:text-[#3B82F6] hover:bg-white/5 transition-all duration-200 whitespace-nowrap"
+                >
+                  Sign Up
+                </Link>
+                <Link 
+                  to="/login" 
+                  className="px-4 py-2 bg-[#3B82F6] text-white rounded-lg text-sm xl:text-base hover:bg-[#2563EB] transition-all duration-200 whitespace-nowrap shadow-lg"
+                >
+                  Login
+                </Link>
+              </>
+            )}
           </nav>
 
           {/* Tablet Navigation (768px - 1023px) */}
@@ -70,24 +104,44 @@ const Header = () => {
             >
               Home
             </Link>
-            <Link 
-              to="/scenarios" 
-              className="px-2 py-1.5 rounded hover:text-[#3B82F6] hover:bg-white/5 transition-all duration-200"
-            >
-              Scenarios
-            </Link>
-            <Link 
-              to="/dashboard" 
-              className="px-2 py-1.5 rounded hover:text-[#3B82F6] hover:bg-white/5 transition-all duration-200"
-            >
-              Dashboard
-            </Link>
-            <Link 
-              to="/login" 
-              className="px-3 py-1.5 bg-[#3B82F6] text-white rounded hover:bg-[#2563EB] transition-all duration-200"
-            >
-              Login
-            </Link>
+            
+            {isAuthenticated ? (
+              <>
+                <Link 
+                  to="/dashboard" 
+                  className="px-2 py-1.5 rounded hover:text-[#3B82F6] hover:bg-white/5 transition-all duration-200"
+                >
+                  Dashboard
+                </Link>
+                <Link 
+                  to="/scenarios" 
+                  className="px-2 py-1.5 rounded hover:text-[#3B82F6] hover:bg-white/5 transition-all duration-200"
+                >
+                  Scenarios
+                </Link>
+                <button 
+                  onClick={handleLogout}
+                  className="px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition-all duration-200"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link 
+                  to="/register" 
+                  className="px-2 py-1.5 rounded hover:text-[#3B82F6] hover:bg-white/5 transition-all duration-200"
+                >
+                  Sign Up
+                </Link>
+                <Link 
+                  to="/login" 
+                  className="px-3 py-1.5 bg-[#3B82F6] text-white rounded hover:bg-[#2563EB] transition-all duration-200"
+                >
+                  Login
+                </Link>
+              </>
+            )}
           </nav>
 
           {/* Mobile Menu Button */}
@@ -128,34 +182,54 @@ const Header = () => {
           >
             <span className="text-base sm:text-lg">Home</span>
           </Link>
-          <Link 
-            to="/scenarios" 
-            onClick={closeMobileMenu}
-            className="block px-4 py-3 text-[#9CA3B0] hover:text-[#3B82F6] hover:bg-white/5 rounded-lg transition-all duration-200 touch-manipulation"
-          >
-            <span className="text-base sm:text-lg">Scenarios</span>
-          </Link>
-          <Link 
-            to="/dashboard" 
-            onClick={closeMobileMenu}
-            className="block px-4 py-3 text-[#9CA3B0] hover:text-[#3B82F6] hover:bg-white/5 rounded-lg transition-all duration-200 touch-manipulation"
-          >
-            <span className="text-base sm:text-lg">Dashboard</span>
-          </Link>
-          <Link 
-            to="/register" 
-            onClick={closeMobileMenu}
-            className="block px-4 py-3 text-[#9CA3B0] hover:text-[#3B82F6] hover:bg-white/5 rounded-lg transition-all duration-200 touch-manipulation"
-          >
-            <span className="text-base sm:text-lg">Sign Up</span>
-          </Link>
-          <Link 
-            to="/login" 
-            onClick={closeMobileMenu}
-            className="block mx-4 mt-4 px-4 py-3 bg-[#3B82F6] text-white text-center rounded-lg hover:bg-[#2563EB] transition-all duration-200 touch-manipulation shadow-lg"
-          >
-            <span className="text-base sm:text-lg font-medium">Login</span>
-          </Link>
+          
+          {/* Conditional Mobile Navigation */}
+          {isAuthenticated ? (
+            <>
+              <Link 
+                to="/dashboard" 
+                onClick={closeMobileMenu}
+                className="block px-4 py-3 text-[#9CA3B0] hover:text-[#3B82F6] hover:bg-white/5 rounded-lg transition-all duration-200 touch-manipulation"
+              >
+                <span className="text-base sm:text-lg">Dashboard</span>
+              </Link>
+              <Link 
+                to="/scenarios" 
+                onClick={closeMobileMenu}
+                className="block px-4 py-3 text-[#9CA3B0] hover:text-[#3B82F6] hover:bg-white/5 rounded-lg transition-all duration-200 touch-manipulation"
+              >
+                <span className="text-base sm:text-lg">Scenarios</span>
+              </Link>
+              {user && (
+                <div className="px-4 py-2 text-[#E6E8EE] text-sm">
+                  Welcome, {user.full_name || user.name || user.email || 'User'}
+                </div>
+              )}
+              <button 
+                onClick={handleLogout}
+                className="block w-full text-left px-4 py-3 text-red-400 hover:text-red-300 hover:bg-white/5 rounded-lg transition-all duration-200 touch-manipulation"
+              >
+                <span className="text-base sm:text-lg">Logout</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <Link 
+                to="/register" 
+                onClick={closeMobileMenu}
+                className="block px-4 py-3 text-[#9CA3B0] hover:text-[#3B82F6] hover:bg-white/5 rounded-lg transition-all duration-200 touch-manipulation"
+              >
+                <span className="text-base sm:text-lg">Sign Up</span>
+              </Link>
+              <Link 
+                to="/login" 
+                onClick={closeMobileMenu}
+                className="block mx-4 mt-4 px-4 py-3 bg-[#3B82F6] text-white text-center rounded-lg hover:bg-[#2563EB] transition-all duration-200 touch-manipulation shadow-lg"
+              >
+                <span className="text-base sm:text-lg font-medium">Login</span>
+              </Link>
+            </>
+          )}
         </nav>
       </div>
     </header>

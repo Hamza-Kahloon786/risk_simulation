@@ -13,9 +13,41 @@ export const useAuth = () => {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://selfless-flow-production.up.railway.app/api'
 
+// Enhanced localStorage utilities for better persistence
+const AuthStorage = {
+  getToken: () => localStorage.getItem('token'),
+  setToken: (token) => localStorage.setItem('token', token),
+  removeToken: () => localStorage.removeItem('token'),
+  
+  getUser: () => {
+    const user = localStorage.getItem('userInfo');
+    return user ? JSON.parse(user) : null;
+  },
+  setUser: (user) => localStorage.setItem('userInfo', JSON.stringify(user)),
+  removeUser: () => localStorage.removeItem('userInfo'),
+  
+  getAuthStatus: () => localStorage.getItem('isAuthenticated') === 'true',
+  setAuthStatus: (status) => localStorage.setItem('isAuthenticated', status.toString()),
+  removeAuthStatus: () => localStorage.removeItem('isAuthenticated'),
+  
+  clearAll: () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userInfo');
+    localStorage.removeItem('isAuthenticated');
+  },
+  
+  isAuthenticated: () => {
+    const token = AuthStorage.getToken();
+    const isAuth = AuthStorage.getAuthStatus();
+    const user = AuthStorage.getUser();
+    return token && isAuth && user;
+  }
+};
+
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null)
-  const [token, setToken] = useState(localStorage.getItem('token'))
+  // Initialize state from localStorage
+  const [user, setUser] = useState(() => AuthStorage.getUser())
+  const [token, setToken] = useState(() => AuthStorage.getToken())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -24,8 +56,30 @@ export const AuthProvider = ({ children }) => {
     checkAuthStatus()
   }, [])
 
+  // Listen for storage changes from other tabs
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'token' || e.key === 'isAuthenticated' || e.key === 'userInfo') {
+        const isAuth = AuthStorage.isAuthenticated();
+        
+        if (isAuth) {
+          const storedToken = AuthStorage.getToken();
+          const storedUser = AuthStorage.getUser();
+          setToken(storedToken);
+          setUser(storedUser);
+        } else {
+          setToken(null);
+          setUser(null);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   const checkAuthStatus = async () => {
-    const savedToken = localStorage.getItem('token')
+    const savedToken = AuthStorage.getToken()
     if (!savedToken) {
       setLoading(false)
       return
@@ -42,20 +96,33 @@ export const AuthProvider = ({ children }) => {
       if (response.ok) {
         const data = await response.json()
         if (data.success) {
-          setUser(data.data)
+          const userData = data.data;
+          setUser(userData)
           setToken(savedToken)
+          
+          // Update localStorage with fresh user data
+          AuthStorage.setUser(userData);
+          AuthStorage.setAuthStatus(true);
         } else {
-          localStorage.removeItem('token')
+          // Clear invalid session
+          AuthStorage.clearAll();
           setToken(null)
+          setUser(null)
         }
       } else {
-        localStorage.removeItem('token')
+        // Clear invalid session
+        AuthStorage.clearAll();
         setToken(null)
+        setUser(null)
       }
     } catch (error) {
       console.error('Auth check failed:', error)
-      localStorage.removeItem('token')
-      setToken(null)
+      // Only clear on network errors if token seems invalid
+      if (error.name !== 'TypeError') {
+        AuthStorage.clearAll();
+        setToken(null)
+        setUser(null)
+      }
     } finally {
       setLoading(false)
     }
@@ -79,7 +146,12 @@ export const AuthProvider = ({ children }) => {
       if (response.ok && data.success) {
         const { access_token, user: userData } = data.data
         
-        localStorage.setItem('token', access_token)
+        // Update localStorage
+        AuthStorage.setToken(access_token);
+        AuthStorage.setUser(userData);
+        AuthStorage.setAuthStatus(true);
+        
+        // Update state
         setToken(access_token)
         setUser(userData)
         
@@ -116,7 +188,12 @@ export const AuthProvider = ({ children }) => {
       if (response.ok && data.success) {
         const { access_token, user: newUser } = data.data
         
-        localStorage.setItem('token', access_token)
+        // Update localStorage
+        AuthStorage.setToken(access_token);
+        AuthStorage.setUser(newUser);
+        AuthStorage.setAuthStatus(true);
+        
+        // Update state
         setToken(access_token)
         setUser(newUser)
         
@@ -149,10 +226,14 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout API call failed:', error)
     } finally {
-      localStorage.removeItem('token')
+      // Clear all storage and state
+      AuthStorage.clearAll();
       setToken(null)
       setUser(null)
       setError(null)
+      
+      // Redirect to home page
+      window.location.href = '/';
     }
   }
 
@@ -173,8 +254,13 @@ export const AuthProvider = ({ children }) => {
       const data = await response.json()
 
       if (response.ok && data.success) {
-        setUser(data.data)
-        return { success: true, user: data.data }
+        const updatedUser = data.data;
+        
+        // Update localStorage and state
+        AuthStorage.setUser(updatedUser);
+        setUser(updatedUser)
+        
+        return { success: true, user: updatedUser }
       } else {
         const errorMessage = data.detail || 'Profile update failed'
         setError(errorMessage)

@@ -14,10 +14,13 @@ import {
   Calendar,
   Clock
 } from 'lucide-react'
+import { useTheme } from '../contexts/ThemeContext'
 import { scenariosAPI, eventsAPI, defensesAPI } from '../services/api'
+
 
 const Dashboard = () => {
   const [scenarios, setScenarios] = useState([])
+  const { themeClasses, isDarkMode } = useTheme() // Add this line
   const [defenseStats, setDefenseStats] = useState({})
   const [events, setEvents] = useState([])
   const [defenses, setDefenses] = useState([])
@@ -201,18 +204,18 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0F1A]">
+    <div className={`min-h-screen ${themeClasses.bg.dashboard}`}>
       {/* Container with responsive padding */}
       <div className="px-3 py-4 sm:px-4 sm:py-6 md:px-6 md:py-8 lg:px-8 max-w-[2000px] mx-auto">
         
         {/* Header Section */}
         <div className="mb-6 sm:mb-8">
-          <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col  space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0 flex-1">
-              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white leading-tight">
+              <h1 className="text-xl dark:text-white sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-800 leading-tight">
                 Risk Simulation Dashboard
               </h1>
-              <p className="text-sm sm:text-base text-gray-400 mt-1 sm:mt-2">
+              <p className="text-sm sm:text-base dark:text-white text-gray-600 mt-1 sm:mt-2">
                 Monitor your organization's risk posture and scenario outcomes
               </p>
             </div>

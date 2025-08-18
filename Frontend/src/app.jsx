@@ -1,7 +1,8 @@
 // frontend/src/App.jsx
 import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider } from './contexts/AuthContext'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { ThemeProvider } from './contexts/ThemeContext'
 import ProtectedRoute from './Components/ProtectedRoute'
 
 // Public Pages
@@ -18,6 +19,17 @@ import Locations from './Components/Locations'
 import Events from './Components/Events'
 import Defenses from './Components/Defenses'
 
+// Component to redirect authenticated users away from auth pages
+const AuthRedirect = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+  
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return children;
+};
+
 // Protected Layout Component
 const ProtectedLayout = ({ children }) => {
   return (
@@ -32,70 +44,89 @@ const ProtectedLayout = ({ children }) => {
   )
 }
 
-function App() {
+// Routes Component (needs to be inside AuthProvider to use useAuth)
+const AppRoutes = () => {
   return (
-    <AuthProvider>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Home />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        
-        {/* Protected Routes with Dashboard Layout */}
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <ProtectedLayout>
-              <Dashboard />
-            </ProtectedLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/scenarios" element={
-          <ProtectedRoute>
-            <ProtectedLayout>
-              <Scenarios />
-            </ProtectedLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/scenarios/:id" element={
-          <ProtectedRoute>
-            <ProtectedLayout>
-              <ScenarioCanvas />
-            </ProtectedLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/locations" element={
-          <ProtectedRoute>
-            <ProtectedLayout>
-              <Locations />
-            </ProtectedLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/events" element={
-          <ProtectedRoute>
-            <ProtectedLayout>
-              <Events />
-            </ProtectedLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/defenses" element={
-          <ProtectedRoute>
-            <ProtectedLayout>
-              <Defenses />
-            </ProtectedLayout>
-          </ProtectedRoute>
-        } />
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/" element={<Home />} />
+      <Route path="/home" element={<Home />} />
+      
+      {/* Auth Routes - redirect to dashboard if already logged in */}
+      <Route path="/login" element={
+        <AuthRedirect>
+          <Login />
+        </AuthRedirect>
+      } />
+      <Route path="/register" element={
+        <AuthRedirect>
+          <Register />
+        </AuthRedirect>
+      } />
+      
+      {/* Protected Routes with Dashboard Layout */}
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <ProtectedLayout>
+            <Dashboard />
+          </ProtectedLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/scenarios" element={
+        <ProtectedRoute>
+          <ProtectedLayout>
+            <Scenarios />
+          </ProtectedLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/scenarios/:id" element={
+        <ProtectedRoute>
+          <ProtectedLayout>
+            <ScenarioCanvas />
+          </ProtectedLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/locations" element={
+        <ProtectedRoute>
+          <ProtectedLayout>
+            <Locations />
+          </ProtectedLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/events" element={
+        <ProtectedRoute>
+          <ProtectedLayout>
+            <Events />
+          </ProtectedLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/defenses" element={
+        <ProtectedRoute>
+          <ProtectedLayout>
+            <Defenses />
+          </ProtectedLayout>
+        </ProtectedRoute>
+      } />
 
-        {/* Catch all route - redirect to home for unauthenticated users */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </AuthProvider>
+      {/* Catch all route - redirect based on authentication status */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   )
 }
 
-export default App
+function app() {
+  return (
+     <ThemeProvider>
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
+    </ThemeProvider>
+  )
+}
+
+export default app

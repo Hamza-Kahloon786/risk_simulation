@@ -1,4 +1,4 @@
-// frontend/src/components/Defenses.jsx - FIXED: Removed DefensesAnnual reference
+// frontend/src/components/Defenses.jsx - FULL THEME SUPPORT
 import React, { useState, useEffect } from 'react'
 import { 
   Shield, 
@@ -19,11 +19,13 @@ import {
   Save,
   X
 } from 'lucide-react'
+import { useTheme } from '../contexts/ThemeContext'
 
 // Import from the corrected API service
 import { defensesAPI } from '../services/api'
 
 const Defenses = () => {
+  const { themeClasses, isDarkMode } = useTheme()
   const [defenses, setDefenses] = useState([])
   const [stats, setStats] = useState({
     total_cost: 0,
@@ -235,23 +237,27 @@ const Defenses = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-900">
+      <div className={`flex items-center justify-center min-h-screen ${themeClasses.bg.dashboard}`}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-white">Loading defense systems...</p>
+          <p className={themeClasses.text.primary}>Loading defense systems...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className={`min-h-screen ${themeClasses.bg.dashboard}`}>
       <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 overflow-y-auto">
         {/* Header */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white">Defense Systems & Security</h1>
-            <p className="text-gray-400 mt-1">Monitor security investments and their financial returns</p>
+            <h1 className={`text-2xl sm:text-3xl font-bold ${themeClasses.text.primary}`}>
+              Defense Systems & Security
+            </h1>
+            <p className={`${themeClasses.text.muted} mt-1`}>
+              Monitor security investments and their financial returns
+            </p>
           </div>
           <div className="flex gap-2 flex-wrap">
             <button 
@@ -284,62 +290,72 @@ const Defenses = () => {
 
         {/* Summary Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-          <div className="bg-gray-800 p-6 rounded-lg">
+          <div className={`${themeClasses.bg.card} p-6 rounded-lg border ${themeClasses.border.primary}`}>
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
                 <DollarSign className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">${(stats.total_cost / 1000000).toFixed(1)}M</p>
-                <p className="text-xs text-gray-400">Annual Defense Cost</p>
+                <p className={`text-2xl font-bold ${themeClasses.text.primary}`}>
+                  ${(stats.total_cost / 1000000).toFixed(1)}M
+                </p>
+                <p className={`text-xs ${themeClasses.text.muted}`}>Annual Defense Cost</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-gray-800 p-6 rounded-lg">
+          <div className={`${themeClasses.bg.card} p-6 rounded-lg border ${themeClasses.border.primary}`}>
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">${(stats.total_savings / 1000000).toFixed(1)}M</p>
-                <p className="text-xs text-gray-400">Loss Prevention</p>
+                <p className={`text-2xl font-bold ${themeClasses.text.primary}`}>
+                  ${(stats.total_savings / 1000000).toFixed(1)}M
+                </p>
+                <p className={`text-xs ${themeClasses.text.muted}`}>Loss Prevention</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-gray-800 p-6 rounded-lg">
+          <div className={`${themeClasses.bg.card} p-6 rounded-lg border ${themeClasses.border.primary}`}>
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                 <BarChart3 className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">{Math.round(stats.average_roi || 0)}%</p>
-                <p className="text-xs text-gray-400">Average ROI</p>
+                <p className={`text-2xl font-bold ${themeClasses.text.primary}`}>
+                  {Math.round(stats.average_roi || 0)}%
+                </p>
+                <p className={`text-xs ${themeClasses.text.muted}`}>Average ROI</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-gray-800 p-6 rounded-lg">
+          <div className={`${themeClasses.bg.card} p-6 rounded-lg border ${themeClasses.border.primary}`}>
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                 <Shield className="w-5 h-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">{stats.total_incidents_prevented || 0}</p>
-                <p className="text-xs text-gray-400">Incidents Prevented</p>
+                <p className={`text-2xl font-bold ${themeClasses.text.primary}`}>
+                  {stats.total_incidents_prevented || 0}
+                </p>
+                <p className={`text-xs ${themeClasses.text.muted}`}>Incidents Prevented</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-gray-800 p-6 rounded-lg">
+          <div className={`${themeClasses.bg.card} p-6 rounded-lg border ${themeClasses.border.primary}`}>
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
                 <TrendingDown className="w-5 h-5 text-orange-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">{Math.round(stats.average_risk_reduction || 0)}%</p>
-                <p className="text-xs text-gray-400">Risk Reduction</p>
+                <p className={`text-2xl font-bold ${themeClasses.text.primary}`}>
+                  {Math.round(stats.average_risk_reduction || 0)}%
+                </p>
+                <p className={`text-xs ${themeClasses.text.muted}`}>Risk Reduction</p>
               </div>
             </div>
           </div>
@@ -350,7 +366,13 @@ const Defenses = () => {
           <select 
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            className="bg-gray-800 text-white border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`
+              border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500
+              ${isDarkMode 
+                ? 'bg-gray-800 text-white border-gray-700' 
+                : 'bg-white text-gray-900 border-gray-300'
+              }
+            `}
           >
             <option value="all">All Categories</option>
             <option value="network_security">Network Security</option>
@@ -364,7 +386,13 @@ const Defenses = () => {
           <select 
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="bg-gray-800 text-white border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`
+              border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500
+              ${isDarkMode 
+                ? 'bg-gray-800 text-white border-gray-700' 
+                : 'bg-white text-gray-900 border-gray-300'
+              }
+            `}
           >
             <option value="all">All Status</option>
             <option value="active">Active</option>
@@ -376,7 +404,16 @@ const Defenses = () => {
         {/* Defense Systems Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 pb-8">
           {defenses.map((defense) => (
-            <div key={defense.id} className="bg-gray-800 p-6 rounded-lg hover:bg-gray-750 transition-colors">
+            <div 
+              key={defense.id} 
+              className={`
+                ${themeClasses.bg.card} p-6 rounded-lg transition-colors border
+                ${isDarkMode 
+                  ? 'border-gray-700 hover:bg-gray-750' 
+                  : 'border-gray-200 hover:bg-gray-50 shadow-sm hover:shadow-md'
+                }
+              `}
+            >
               {/* Defense Header */}
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4">
                 <div className="flex items-center space-x-3">
@@ -384,8 +421,12 @@ const Defenses = () => {
                     {getCategoryIcon(defense.category)}
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-white">{defense.name}</h3>
-                    <p className="text-sm text-gray-400 truncate max-w-[70vw] sm:max-w-xs">{defense.vendor}</p>
+                    <h3 className={`text-lg font-semibold ${themeClasses.text.primary}`}>
+                      {defense.name}
+                    </h3>
+                    <p className={`text-sm ${themeClasses.text.muted} truncate max-w-[70vw] sm:max-w-xs`}>
+                      {defense.vendor}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -399,13 +440,22 @@ const Defenses = () => {
                       setEditingDefense(defense)
                       setShowAddForm(true)
                     }}
-                    className="text-gray-400 hover:text-white p-1 transition-colors"
+                    className={`
+                      p-1 transition-colors
+                      ${isDarkMode 
+                        ? 'text-gray-400 hover:text-white' 
+                        : 'text-gray-500 hover:text-gray-700'
+                      }
+                    `}
                   >
                     <Edit className="w-4 h-4" />
                   </button>
                   <button 
                     onClick={() => handleDeleteDefense(defense.id)}
-                    className="text-gray-400 hover:text-red-400 p-1 transition-colors"
+                    className={`
+                      p-1 transition-colors hover:text-red-400
+                      ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}
+                    `}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -415,12 +465,12 @@ const Defenses = () => {
               {/* Effectiveness & Financial Metrics */}
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <p className="text-xs text-gray-400">Effectiveness</p>
+                  <p className={`text-xs ${themeClasses.text.muted}`}>Effectiveness</p>
                   <div className="flex items-center space-x-2">
                     <p className={`text-lg font-bold ${getEffectivenessColor(defense.effectiveness)}`}>
                       {defense.effectiveness}%
                     </p>
-                    <div className="flex-1 bg-gray-700 rounded-full h-2">
+                    <div className={`flex-1 rounded-full h-2 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
                       <div 
                         className={`h-2 rounded-full ${defense.effectiveness >= 90 ? 'bg-green-500' : defense.effectiveness >= 80 ? 'bg-yellow-500' : 'bg-orange-500'}`}
                         style={{ width: `${defense.effectiveness}%` }}
@@ -429,7 +479,7 @@ const Defenses = () => {
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400">ROI</p>
+                  <p className={`text-xs ${themeClasses.text.muted}`}>ROI</p>
                   <p className="text-lg font-bold text-green-400">{defense.roi}%</p>
                 </div>
               </div>
@@ -437,25 +487,38 @@ const Defenses = () => {
               {/* Cost Breakdown */}
               <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
                 <div>
-                  <p className="text-gray-400">Annual Cost</p>
-                  <p className="font-medium text-white">${(defense.annual_cost / 1000).toFixed(0)}K</p>
+                  <p className={themeClasses.text.muted}>Annual Cost</p>
+                  <p className={`font-medium ${themeClasses.text.primary}`}>
+                    ${(defense.annual_cost / 1000).toFixed(0)}K
+                  </p>
                 </div>
                 <div>
-                  <p className="text-gray-400">Loss Prevented</p>
-                  <p className="font-medium text-green-400">${(defense.estimated_loss_prevented / 1000).toFixed(0)}K</p>
+                  <p className={themeClasses.text.muted}>Loss Prevented</p>
+                  <p className="font-medium text-green-400">
+                    ${(defense.estimated_loss_prevented / 1000).toFixed(0)}K
+                  </p>
                 </div>
                 <div>
-                  <p className="text-gray-400">Incidents Stopped</p>
+                  <p className={themeClasses.text.muted}>Incidents Stopped</p>
                   <p className="font-medium text-blue-400">{defense.incidents_prevented}</p>
                 </div>
               </div>
 
               {/* Coverage Areas */}
               <div className="mb-4">
-                <p className="text-xs text-gray-400 mb-2">Coverage:</p>
+                <p className={`text-xs ${themeClasses.text.muted} mb-2`}>Coverage:</p>
                 <div className="flex flex-wrap gap-1">
                   {defense.coverage?.map((area, index) => (
-                    <span key={index} className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded">
+                    <span 
+                      key={index} 
+                      className={`
+                        px-2 py-1 text-xs rounded
+                        ${isDarkMode 
+                          ? 'bg-gray-700 text-gray-300' 
+                          : 'bg-gray-100 text-gray-700'
+                        }
+                      `}
+                    >
                       {area}
                     </span>
                   ))}
@@ -463,23 +526,26 @@ const Defenses = () => {
               </div>
 
               {/* Performance Metrics */}
-              <div className="border-t border-gray-700 pt-4">
+              <div className={`
+                border-t pt-4
+                ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}
+              `}>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-gray-400">Uptime</p>
-                    <p className="font-medium text-white">{defense.uptime}%</p>
+                    <p className={themeClasses.text.muted}>Uptime</p>
+                    <p className={`font-medium ${themeClasses.text.primary}`}>{defense.uptime}%</p>
                   </div>
                   <div>
-                    <p className="text-gray-400">Risk Reduction</p>
+                    <p className={themeClasses.text.muted}>Risk Reduction</p>
                     <p className="font-medium text-green-400">{defense.risk_reduction}%</p>
                   </div>
                   <div>
-                    <p className="text-gray-400">Location</p>
-                    <p className="font-medium text-white text-xs">{defense.location}</p>
+                    <p className={themeClasses.text.muted}>Location</p>
+                    <p className={`font-medium ${themeClasses.text.primary} text-xs`}>{defense.location}</p>
                   </div>
                   <div>
-                    <p className="text-gray-400">Last Update</p>
-                    <p className="font-medium text-white text-xs">
+                    <p className={themeClasses.text.muted}>Last Update</p>
+                    <p className={`font-medium ${themeClasses.text.primary} text-xs`}>
                       {defense.last_update ? new Date(defense.last_update).toLocaleDateString() : 'N/A'}
                     </p>
                   </div>
@@ -503,9 +569,13 @@ const Defenses = () => {
 
         {defenses.length === 0 && (
           <div className="text-center py-12">
-            <Shield className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-white mb-2">No defense systems found</h3>
-            <p className="text-gray-400 mb-4">Try adjusting your filter criteria or add a new defense system</p>
+            <Shield className={`w-16 h-16 ${themeClasses.text.muted} mx-auto mb-4`} />
+            <h3 className={`text-lg font-medium ${themeClasses.text.primary} mb-2`}>
+              No defense systems found
+            </h3>
+            <p className={`${themeClasses.text.muted} mb-4`}>
+              Try adjusting your filter criteria or add a new defense system
+            </p>
             <button 
               onClick={handleCreateSampleData}
               className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
@@ -524,6 +594,8 @@ const Defenses = () => {
               setShowAddForm(false)
               setEditingDefense(null)
             }}
+            themeClasses={themeClasses}
+            isDarkMode={isDarkMode}
           />
         )}
       </div>
@@ -532,7 +604,7 @@ const Defenses = () => {
 }
 
 // Defense Form Component
-const DefenseForm = ({ defense, onSave, onCancel }) => {
+const DefenseForm = ({ defense, onSave, onCancel, themeClasses, isDarkMode }) => {
   const [formData, setFormData] = useState({
     name: defense?.name || '',
     category: defense?.category || 'network_security',
@@ -585,15 +657,15 @@ const DefenseForm = ({ defense, onSave, onCancel }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className={`${themeClasses.bg.card} rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto`}>
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">
+            <h2 className={`text-2xl font-bold ${themeClasses.text.primary}`}>
               {defense ? 'Edit Defense System' : 'Add New Defense System'}
             </h2>
             <button 
               onClick={onCancel}
-              className="text-gray-400 hover:text-white"
+              className={`${themeClasses.text.muted} hover:text-red-400 transition-colors`}
             >
               <X className="w-6 h-6" />
             </button>
@@ -602,36 +674,40 @@ const DefenseForm = ({ defense, onSave, onCancel }) => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Name</label>
+                <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>
+                  Name
+                </label>
                 <input
                   type="text"
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  className="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`
+                    w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500
+                    ${isDarkMode 
+                      ? 'bg-gray-700 text-white border-gray-600' 
+                      : 'bg-white text-gray-900 border-gray-300'
+                    }
+                  `}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Vendor</label>
-                <input
-                  type="text"
-                  name="vendor"
-                  value={formData.vendor}
-                  onChange={handleChange}
-                  required
-                  className="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Category</label>
+                <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>
+                  Category
+                </label>
                 <select
                   name="category"
                   value={formData.category}
                   onChange={handleChange}
-                  className="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`
+                    w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500
+                    ${isDarkMode 
+                      ? 'bg-gray-700 text-white border-gray-600' 
+                      : 'bg-white text-gray-900 border-gray-300'
+                    }
+                  `}
                 >
                   <option value="network_security">Network Security</option>
                   <option value="human_security">Human Security</option>
@@ -643,12 +719,20 @@ const DefenseForm = ({ defense, onSave, onCancel }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Status</label>
+                <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>
+                  Status
+                </label>
                 <select
                   name="status"
                   value={formData.status}
                   onChange={handleChange}
-                  className="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`
+                    w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500
+                    ${isDarkMode 
+                      ? 'bg-gray-700 text-white border-gray-600' 
+                      : 'bg-white text-gray-900 border-gray-300'
+                    }
+                  `}
                 >
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
@@ -657,7 +741,9 @@ const DefenseForm = ({ defense, onSave, onCancel }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Effectiveness (%)</label>
+                <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>
+                  Effectiveness (%)
+                </label>
                 <input
                   type="number"
                   name="effectiveness"
@@ -666,12 +752,20 @@ const DefenseForm = ({ defense, onSave, onCancel }) => {
                   min="0"
                   max="100"
                   required
-                  className="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`
+                    w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500
+                    ${isDarkMode 
+                      ? 'bg-gray-700 text-white border-gray-600' 
+                      : 'bg-white text-gray-900 border-gray-300'
+                    }
+                  `}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Risk Reduction (%)</label>
+                <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>
+                  Risk Reduction (%)
+                </label>
                 <input
                   type="number"
                   name="risk_reduction"
@@ -680,12 +774,20 @@ const DefenseForm = ({ defense, onSave, onCancel }) => {
                   min="0"
                   max="100"
                   required
-                  className="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`
+                    w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500
+                    ${isDarkMode 
+                      ? 'bg-gray-700 text-white border-gray-600' 
+                      : 'bg-white text-gray-900 border-gray-300'
+                    }
+                  `}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Annual Cost ($)</label>
+                <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>
+                  Annual Cost ($)
+                </label>
                 <input
                   type="number"
                   name="annual_cost"
@@ -693,12 +795,20 @@ const DefenseForm = ({ defense, onSave, onCancel }) => {
                   onChange={handleChange}
                   min="0"
                   required
-                  className="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`
+                    w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500
+                    ${isDarkMode 
+                      ? 'bg-gray-700 text-white border-gray-600' 
+                      : 'bg-white text-gray-900 border-gray-300'
+                    }
+                  `}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Implementation Cost ($)</label>
+                <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>
+                  Implementation Cost ($)
+                </label>
                 <input
                   type="number"
                   name="implementation_cost"
@@ -706,12 +816,20 @@ const DefenseForm = ({ defense, onSave, onCancel }) => {
                   onChange={handleChange}
                   min="0"
                   required
-                  className="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`
+                    w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500
+                    ${isDarkMode 
+                      ? 'bg-gray-700 text-white border-gray-600' 
+                      : 'bg-white text-gray-900 border-gray-300'
+                    }
+                  `}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Estimated Loss Prevented ($)</label>
+                <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>
+                  Estimated Loss Prevented ($)
+                </label>
                 <input
                   type="number"
                   name="estimated_loss_prevented"
@@ -719,36 +837,60 @@ const DefenseForm = ({ defense, onSave, onCancel }) => {
                   onChange={handleChange}
                   min="0"
                   required
-                  className="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`
+                    w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500
+                    ${isDarkMode 
+                      ? 'bg-gray-700 text-white border-gray-600' 
+                      : 'bg-white text-gray-900 border-gray-300'
+                    }
+                  `}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Incidents Prevented</label>
+                <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>
+                  Incidents Prevented
+                </label>
                 <input
                   type="number"
                   name="incidents_prevented"
                   value={formData.incidents_prevented}
                   onChange={handleChange}
                   min="0"
-                  className="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`
+                    w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500
+                    ${isDarkMode 
+                      ? 'bg-gray-700 text-white border-gray-600' 
+                      : 'bg-white text-gray-900 border-gray-300'
+                    }
+                  `}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Threats Blocked</label>
+                <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>
+                  Threats Blocked
+                </label>
                 <input
                   type="number"
                   name="threats_blocked"
                   value={formData.threats_blocked}
                   onChange={handleChange}
                   min="0"
-                  className="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`
+                    w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500
+                    ${isDarkMode 
+                      ? 'bg-gray-700 text-white border-gray-600' 
+                      : 'bg-white text-gray-900 border-gray-300'
+                    }
+                  `}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Uptime (%)</label>
+                <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>
+                  Uptime (%)
+                </label>
                 <input
                   type="number"
                   name="uptime"
@@ -757,32 +899,54 @@ const DefenseForm = ({ defense, onSave, onCancel }) => {
                   min="0"
                   max="100"
                   step="0.1"
-                  className="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`
+                    w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500
+                    ${isDarkMode 
+                      ? 'bg-gray-700 text-white border-gray-600' 
+                      : 'bg-white text-gray-900 border-gray-300'
+                    }
+                  `}
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Location</label>
+              <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>
+                Location
+              </label>
               <input
                 type="text"
                 name="location"
                 value={formData.location}
                 onChange={handleChange}
                 required
-                className="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`
+                  w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500
+                  ${isDarkMode 
+                    ? 'bg-gray-700 text-white border-gray-600' 
+                    : 'bg-white text-gray-900 border-gray-300'
+                  }
+                `}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Coverage Areas (comma-separated)</label>
+              <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>
+                Coverage Areas (comma-separated)
+              </label>
               <input
                 type="text"
                 name="coverage"
                 value={formData.coverage}
                 onChange={handleChange}
                 placeholder="e.g., Network Traffic, DDoS Protection, Intrusion Detection"
-                className="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`
+                  w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500
+                  ${isDarkMode 
+                    ? 'bg-gray-700 text-white border-gray-600' 
+                    : 'bg-white text-gray-900 border-gray-300'
+                  }
+                `}
               />
             </div>
 
@@ -790,7 +954,13 @@ const DefenseForm = ({ defense, onSave, onCancel }) => {
               <button
                 type="button"
                 onClick={onCancel}
-                className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                className={`
+                  px-6 py-2 rounded-lg transition-colors
+                  ${isDarkMode 
+                    ? 'bg-gray-600 hover:bg-gray-700 text-white' 
+                    : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                  }
+                `}
               >
                 Cancel
               </button>
@@ -810,3 +980,4 @@ const DefenseForm = ({ defense, onSave, onCancel }) => {
 }
 
 export default Defenses
+                     

@@ -1,4 +1,4 @@
-// frontend/src/components/Sidebar.jsx
+// Components/Sidebar.jsx - Updated with ThemeContext
 import React, { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { 
@@ -10,20 +10,44 @@ import {
   Shield,
   LogOut,
   User,
-  Settings,
   ChevronDown,
   ChevronUp,
   Menu,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Sun,
+  Moon
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useTheme } from '../contexts/ThemeContext'
 
 const Sidebar = () => {
   const location = useLocation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
+  
+  // Try to use theme, but fallback to local state if it fails
+  let themeData;
+  try {
+    themeData = useTheme();
+  } catch (error) {
+    console.warn('ThemeContext not available, using fallback');
+    themeData = {
+      isDarkMode: true,
+      toggleTheme: () => {},
+      themeClasses: {
+        bg: { primary: 'bg-gray-800', secondary: 'bg-gray-700' },
+        text: { primary: 'text-white', secondary: 'text-gray-300', muted: 'text-gray-400' },
+        border: { primary: 'border-gray-700' },
+        hover: { bg: 'hover:bg-gray-700', text: 'hover:text-white' },
+        active: { bg: 'bg-blue-600', text: 'text-white' }
+      }
+    };
+  }
+  
+  const { isDarkMode, toggleTheme, themeClasses } = themeData;
+  
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
@@ -46,7 +70,7 @@ const Sidebar = () => {
       const mobile = window.innerWidth < 1024
       setIsMobile(mobile)
       if (mobile) {
-        setIsCollapsed(false) // Don't collapse on mobile
+        setIsCollapsed(false)
       }
     }
 
@@ -101,13 +125,17 @@ const Sidebar = () => {
     <>
       {/* Logo Section */}
       <div className={`
-        flex items-center p-4 sm:p-6 border-b border-gray-700 flex-shrink-0
+        flex items-center p-4 sm:p-6 flex-shrink-0
+        ${themeClasses.border.primary} border-b
         ${isCollapsed && !isMobile ? 'justify-center px-2' : 'space-x-3'}
       `}>
         {isMobile && (
           <button
             onClick={closeMobileMenu}
-            className="lg:hidden p-1 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 mr-2"
+            className={`
+              lg:hidden p-1 rounded-md mr-2 transition-colors
+              ${themeClasses.text.muted} ${themeClasses.hover.text} ${themeClasses.hover.bg}
+            `}
           >
             <X className="w-5 h-5" />
           </button>
@@ -119,8 +147,12 @@ const Sidebar = () => {
         
         {(!isCollapsed || isMobile) && (
           <div className="min-w-0 flex-1">
-            <h1 className="text-base sm:text-lg font-bold text-white truncate">RiskSim</h1>
-            <p className="text-xs sm:text-sm text-gray-400">Enterprise</p>
+            <h1 className={`text-base sm:text-lg font-bold truncate ${themeClasses.text.primary}`}>
+              RiskSim
+            </h1>
+            <p className={`text-xs sm:text-sm ${themeClasses.text.muted}`}>
+              Enterprise
+            </p>
           </div>
         )}
 
@@ -128,7 +160,10 @@ const Sidebar = () => {
         {!isMobile && (
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="hidden lg:flex p-1 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
+            className={`
+              hidden lg:flex p-1 rounded-md transition-colors
+              ${themeClasses.text.muted} ${themeClasses.hover.text} ${themeClasses.hover.bg}
+            `}
           >
             {isCollapsed ? (
               <ChevronRight className="w-4 h-4" />
@@ -159,8 +194,8 @@ const Sidebar = () => {
                     : 'space-x-3 px-3 py-2 sm:py-2.5'
                   }
                   ${isActive 
-                    ? 'bg-blue-600 text-white shadow-lg' 
-                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                    ? `${themeClasses.active.bg} ${themeClasses.active.text} shadow-lg`
+                    : `${themeClasses.text.secondary} ${themeClasses.hover.bg} ${themeClasses.hover.text}`
                   }
                 `}
                 title={isCollapsed && !isMobile ? item.name : ''}
@@ -181,14 +216,16 @@ const Sidebar = () => {
           <div className="pt-4 sm:pt-6">
             {(!isCollapsed || isMobile) && (
               <div className="flex items-center space-x-2 px-3 mb-2 sm:mb-3">
-                <Database className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
-                <span className="text-xs sm:text-sm font-medium text-gray-400">Data</span>
+                <Database className={`w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 ${themeClasses.text.muted}`} />
+                <span className={`text-xs sm:text-sm font-medium ${themeClasses.text.muted}`}>
+                  Data
+                </span>
               </div>
             )}
             
             {(isCollapsed && !isMobile) && (
               <div className="flex justify-center mb-2">
-                <div className="w-6 h-px bg-gray-600"></div>
+                <div className={`w-6 h-px ${isDarkMode ? 'bg-gray-600' : 'bg-gray-300'}`}></div>
               </div>
             )}
             
@@ -208,8 +245,8 @@ const Sidebar = () => {
                       : 'space-x-3 px-4 sm:px-6 py-2'
                     }
                     ${isActive 
-                      ? 'bg-blue-600 text-white shadow-lg' 
-                      : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+                      ? `${themeClasses.active.bg} ${themeClasses.active.text} shadow-lg`
+                      : `${themeClasses.text.muted} ${themeClasses.hover.bg} ${themeClasses.hover.text}`
                     }
                   `}
                   title={isCollapsed && !isMobile ? item.name : ''}
@@ -228,13 +265,16 @@ const Sidebar = () => {
       </div>
 
       {/* User Profile - Fixed at bottom */}
-      <div className="border-t border-gray-700 p-3 sm:p-4 flex-shrink-0">
+      <div className={`${themeClasses.border.primary} border-t p-3 sm:p-4 flex-shrink-0`}>
         <div className="relative">
           {/* User Info with Dropdown */}
           {(!isCollapsed || isMobile) && (
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="w-full flex items-center space-x-3 mb-3 sm:mb-4 p-2 rounded-lg hover:bg-gray-700 transition-colors touch-manipulation"
+              className={`
+                w-full flex items-center space-x-3 mb-3 sm:mb-4 p-2 rounded-lg transition-colors touch-manipulation
+                ${themeClasses.hover.bg}
+              `}
             >
               <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-xs font-medium text-white">
@@ -242,17 +282,17 @@ const Sidebar = () => {
                 </span>
               </div>
               <div className="flex-1 text-left min-w-0">
-                <p className="text-xs sm:text-sm font-medium text-white truncate">
+                <p className={`text-xs sm:text-sm font-medium truncate ${themeClasses.text.primary}`}>
                   {user?.full_name || 'User'}
                 </p>
-                <p className="text-xs text-gray-400 truncate">
+                <p className={`text-xs truncate ${themeClasses.text.muted}`}>
                   {user?.company || 'Risk Analyst'}
                 </p>
               </div>
               {showUserMenu ? (
-                <ChevronUp className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <ChevronUp className={`w-4 h-4 flex-shrink-0 ${themeClasses.text.muted}`} />
               ) : (
-                <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <ChevronDown className={`w-4 h-4 flex-shrink-0 ${themeClasses.text.muted}`} />
               )}
             </button>
           )}
@@ -275,27 +315,52 @@ const Sidebar = () => {
           {/* Dropdown Menu */}
           {showUserMenu && (
             <div className={`
-              absolute bg-gray-700 rounded-lg border border-gray-600 shadow-xl z-50
+              absolute rounded-lg border shadow-xl z-50
+              ${themeClasses.bg.secondary} ${themeClasses.border.primary}
               ${isCollapsed && !isMobile 
                 ? 'bottom-full right-0 mb-2 w-48' 
                 : 'bottom-full left-0 right-0 mb-2'
               }
             `}>
               <div className="p-2 space-y-1">
-                <div className="px-3 py-2 border-b border-gray-600">
-                  <p className="text-xs text-gray-400">Signed in as</p>
-                  <p className="text-xs sm:text-sm font-medium text-white truncate">
+                <div className={`px-3 py-2 border-b ${themeClasses.border.primary}`}>
+                  <p className={`text-xs ${themeClasses.text.muted}`}>Signed in as</p>
+                  <p className={`text-xs sm:text-sm font-medium truncate ${themeClasses.text.primary}`}>
                     {user?.email}
                   </p>
                 </div>
                 
+                {/* Theme Toggle Button */}
                 <button
+                  onClick={() => {
+                    toggleTheme()
+                    setShowUserMenu(false)
+                  }}
+                  className={`
+                    flex items-center space-x-3 w-full px-3 py-2 rounded-md transition-colors text-left touch-manipulation
+                    ${themeClasses.text.secondary} ${themeClasses.hover.bg} ${themeClasses.hover.text}
+                  `}
+                >
+                  {isDarkMode ? (
+                    <Sun className="w-4 h-4 flex-shrink-0" />
+                  ) : (
+                    <Moon className="w-4 h-4 flex-shrink-0" />
+                  )}
+                  <span className="text-xs sm:text-sm">
+                    {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                  </span>
+                </button>
+                
+                {/* <button
                   onClick={() => setShowUserMenu(false)}
-                  className="flex items-center space-x-3 w-full px-3 py-2 text-gray-300 hover:bg-gray-600 hover:text-white rounded-md transition-colors text-left touch-manipulation"
+                  className={`
+                    flex items-center space-x-3 w-full px-3 py-2 rounded-md transition-colors text-left touch-manipulation
+                    ${themeClasses.text.secondary} ${themeClasses.hover.bg} ${themeClasses.hover.text}
+                  `}
                 >
                   <Settings className="w-4 h-4 flex-shrink-0" />
                   <span className="text-xs sm:text-sm">Settings</span>
-                </button>
+                </button> */}
                 
                 <button
                   onClick={() => {
@@ -311,6 +376,25 @@ const Sidebar = () => {
             </div>
           )}
         </div>
+
+        {/* Theme Toggle for Collapsed Sidebar */}
+        {(isCollapsed && !isMobile) && (
+          <button 
+            onClick={toggleTheme}
+            className={`
+              flex items-center justify-center rounded-lg transition-colors touch-manipulation mb-3
+              w-10 h-10 mx-auto
+              ${themeClasses.text.muted} ${themeClasses.hover.bg} ${themeClasses.hover.text}
+            `}
+            title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            {isDarkMode ? (
+              <Sun className="w-4 h-4" />
+            ) : (
+              <Moon className="w-4 h-4" />
+            )}
+          </button>
+        )}
 
         {/* Plan Info */}
         {(!isCollapsed || isMobile) && (
@@ -342,11 +426,17 @@ const Sidebar = () => {
     <>
       <MobileOverlay />
       
-      {/* Mobile Menu Button - Only show on mobile when sidebar is closed and not overlapping content */}
+      {/* Mobile Menu Button */}
       {isMobile && !isMobileMenuOpen && (
         <button
           onClick={() => setIsMobileMenuOpen(true)}
-          className="fixed top-4 left-4 z-40 lg:hidden p-2 bg-gray-800/90 backdrop-blur-sm border border-gray-600 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700 transition-all duration-200 touch-manipulation shadow-lg"
+          className={`
+            fixed top-4 left-4 z-40 lg:hidden p-2 backdrop-blur-sm border rounded-lg transition-all duration-200 touch-manipulation shadow-lg
+            ${isDarkMode 
+              ? 'bg-gray-800/90 border-gray-600 text-gray-300 hover:text-white hover:bg-gray-700' 
+              : 'bg-white/90 border-gray-300 text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+            }
+          `}
           aria-label="Open navigation menu"
         >
           <Menu className="w-5 h-5" />
@@ -355,18 +445,20 @@ const Sidebar = () => {
       
       {/* Mobile Sidebar */}
       <div className={`
-        lg:hidden fixed inset-y-0 left-0 z-50 bg-gray-800 border-r border-gray-700 flex flex-col
+        lg:hidden fixed inset-y-0 left-0 z-50 border-r flex flex-col
         transition-transform duration-300 ease-in-out
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
         w-64 sm:w-72
+        ${themeClasses.bg.primary} ${themeClasses.border.primary}
       `}>
         <SidebarContent />
       </div>
 
       {/* Desktop Sidebar */}
       <div className={`
-        hidden lg:flex bg-gray-800 border-r border-gray-700 flex-col h-screen transition-all duration-300 ease-in-out
+        hidden lg:flex border-r flex-col h-screen transition-all duration-300 ease-in-out
         ${isCollapsed ? 'w-16 xl:w-20' : 'w-64 xl:w-72 2xl:w-80'}
+        ${themeClasses.bg.primary} ${themeClasses.border.primary}
       `}>
         <SidebarContent />
       </div>

@@ -21,8 +21,10 @@ import {
   Menu,
   MoreVertical
 } from 'lucide-react'
+import { useTheme } from '../contexts/ThemeContext'
 
 const Events = () => {
+  const { themeClasses, isDarkMode } = useTheme()
   const [events, setEvents] = useState([])
   const [filteredEvents, setFilteredEvents] = useState([])
   const [loading, setLoading] = useState(false)
@@ -296,7 +298,7 @@ const Events = () => {
     switch (type) {
       case 'cyber_attack': return 'bg-red-500'
       case 'supply_disruption': return 'bg-orange-500'
-      case 'operational_risk': return 'bg-yellow-500'
+      case 'operational_risk': return isDarkMode ? 'bg-gray-500' : 'bg-gray-600'
       case 'legal_action': return 'bg-purple-500'
       default: return 'bg-gray-500'
     }
@@ -306,7 +308,7 @@ const Events = () => {
     switch (severity) {
       case 'critical': return 'bg-red-500/20 text-red-400'
       case 'high': return 'bg-orange-500/20 text-orange-400'
-      case 'medium': return 'bg-yellow-500/20 text-yellow-400'
+      case 'medium': return isDarkMode ? 'bg-gray-500/20 text-gray-300' : 'bg-gray-200 text-gray-800'
       case 'low': return 'bg-green-500/20 text-green-400'
       default: return 'bg-gray-500/20 text-gray-400'
     }
@@ -316,7 +318,7 @@ const Events = () => {
     switch (status) {
       case 'resolved': return 'bg-green-500/20 text-green-400'
       case 'in_progress': return 'bg-blue-500/20 text-blue-400'
-      case 'investigating': return 'bg-yellow-500/20 text-yellow-400'
+      case 'investigating': return isDarkMode ? 'bg-gray-500/20 text-gray-300' : 'bg-gray-200 text-gray-800'
       default: return 'bg-gray-500/20 text-gray-400'
     }
   }
@@ -335,26 +337,26 @@ const Events = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-900 px-4">
+      <div className={`flex items-center justify-center min-h-screen ${themeClasses.bg.dashboard} px-4`}>
         <div className="flex items-center space-x-3">
           <RefreshCw className="w-6 h-6 sm:w-8 sm:h-8 animate-spin text-blue-500" />
-          <span className="text-white text-base sm:text-lg">Loading events...</span>
+          <span className={`${themeClasses.text.primary} text-base sm:text-lg`}>Loading events...</span>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className={`min-h-screen ${themeClasses.bg.dashboard}`}>
       <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 max-w-7xl mx-auto">
         {/* Mobile-First Header */}
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
             <div className="flex-1">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white leading-tight">
+              <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-bold ${themeClasses.text.primary} leading-tight`}>
                 Risk Events & Incidents
               </h1>
-              <p className="text-gray-400 mt-1 sm:mt-2 text-sm sm:text-base">
+              <p className={`${themeClasses.text.muted} mt-1 sm:mt-2 text-sm sm:text-base`}>
                 Track security incidents and their business impact
               </p>
             </div>
@@ -395,58 +397,58 @@ const Events = () => {
 
         {/* Responsive Summary Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
-          <div className="bg-gray-800 rounded-lg p-3 sm:p-4 lg:p-6 border border-gray-700">
+          <div className={`${themeClasses.bg.card} rounded-lg p-3 sm:p-4 lg:p-6 border ${themeClasses.border.primary}`}>
             <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
                 <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
               </div>
               <div className="min-w-0">
-                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white truncate">
+                <p className={`text-lg sm:text-xl lg:text-2xl font-bold ${themeClasses.text.primary} truncate`}>
                   ${(totalStats.totalLoss / 1000000).toFixed(1)}M
                 </p>
-                <p className="text-xs text-gray-400">Total Revenue Loss</p>
+                <p className={`text-xs ${themeClasses.text.muted}`}>Total Revenue Loss</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-gray-800 rounded-lg p-3 sm:p-4 lg:p-6 border border-gray-700">
+          <div className={`${themeClasses.bg.card} rounded-lg p-3 sm:p-4 lg:p-6 border ${themeClasses.border.primary}`}>
             <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
                 <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-orange-400" />
               </div>
               <div className="min-w-0">
-                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white truncate">
+                <p className={`text-lg sm:text-xl lg:text-2xl font-bold ${themeClasses.text.primary} truncate`}>
                   {totalStats.totalDowntime}h
                 </p>
-                <p className="text-xs text-gray-400">Total Downtime</p>
+                <p className={`text-xs ${themeClasses.text.muted}`}>Total Downtime</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-gray-800 rounded-lg p-3 sm:p-4 lg:p-6 border border-gray-700">
+          <div className={`${themeClasses.bg.card} rounded-lg p-3 sm:p-4 lg:p-6 border ${themeClasses.border.primary}`}>
             <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-purple-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
                 <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
               </div>
               <div className="min-w-0">
-                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
+                <p className={`text-lg sm:text-xl lg:text-2xl font-bold ${themeClasses.text.primary}`}>
                   {events.length}
                 </p>
-                <p className="text-xs text-gray-400">Total Incidents</p>
+                <p className={`text-xs ${themeClasses.text.muted}`}>Total Incidents</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-gray-800 rounded-lg p-3 sm:p-4 lg:p-6 border border-gray-700 col-span-2 lg:col-span-1">
+          <div className={`${themeClasses.bg.card} rounded-lg p-3 sm:p-4 lg:p-6 border ${themeClasses.border.primary} col-span-2 lg:col-span-1`}>
             <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
                 <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
               </div>
               <div className="min-w-0">
-                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white truncate">
+                <p className={`text-lg sm:text-xl lg:text-2xl font-bold ${themeClasses.text.primary} truncate`}>
                   ${(totalStats.preventionSpending / 1000).toFixed(0)}K
                 </p>
-                <p className="text-xs text-gray-400">Prevention Spending</p>
+                <p className={`text-xs ${themeClasses.text.muted}`}>Prevention Spending</p>
               </div>
             </div>
           </div>
@@ -456,13 +458,16 @@ const Events = () => {
         <div className="mb-4 sm:mb-6">
           {/* Search Bar */}
           <div className="relative mb-3 sm:mb-4">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
+            <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${themeClasses.text.muted} w-4 h-4 sm:w-5 sm:h-5`} />
             <input
               type="text"
               placeholder="Search events..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-10 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation"
+              className={`
+                w-full rounded-lg px-10 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation
+                ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}
+              `}
             />
           </div>
 
@@ -470,7 +475,10 @@ const Events = () => {
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="sm:hidden flex items-center justify-center space-x-2 bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white hover:bg-gray-600 transition-colors touch-manipulation"
+              className={`
+                sm:hidden flex items-center justify-center space-x-2 rounded-lg px-4 py-3 transition-colors touch-manipulation
+                ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white hover:bg-gray-600' : 'bg-white border-gray-300 text-gray-900 hover:bg-gray-100'}
+              `}
             >
               <Filter className="w-4 h-4" />
               <span>Filters</span>
@@ -481,7 +489,10 @@ const Events = () => {
               <select 
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
-                className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm touch-manipulation"
+                className={`
+                  flex-1 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm touch-manipulation
+                  ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}
+                `}
               >
                 <option value="all">All Types</option>
                 <option value="cyber_attack">Cyber Attacks</option>
@@ -493,7 +504,10 @@ const Events = () => {
               <select 
                 value={filterSeverity}
                 onChange={(e) => setFilterSeverity(e.target.value)}
-                className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm touch-manipulation"
+                className={`
+                  flex-1 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm touch-manipulation
+                  ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}
+                `}
               >
                 <option value="all">All Severities</option>
                 <option value="critical">Critical</option>
@@ -506,11 +520,14 @@ const Events = () => {
 
           {/* Mobile Filters Dropdown */}
           {showFilters && (
-            <div className="sm:hidden mt-3 space-y-3 p-4 bg-gray-800 rounded-lg border border-gray-700">
+            <div className={`sm:hidden mt-3 space-y-3 p-4 ${themeClasses.bg.card} rounded-lg border ${themeClasses.border.primary}`}>
               <select 
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm touch-manipulation"
+                className={`
+                  w-full rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm touch-manipulation
+                  ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}
+                `}
               >
                 <option value="all">All Types</option>
                 <option value="cyber_attack">Cyber Attacks</option>
@@ -522,7 +539,10 @@ const Events = () => {
               <select 
                 value={filterSeverity}
                 onChange={(e) => setFilterSeverity(e.target.value)}
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm touch-manipulation"
+                className={`
+                  w-full rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm touch-manipulation
+                  ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}
+                `}
               >
                 <option value="all">All Severities</option>
                 <option value="critical">Critical</option>
@@ -537,7 +557,7 @@ const Events = () => {
         {/* Responsive Events List */}
         <div className="space-y-3 sm:space-y-4 pb-6 sm:pb-8">
           {filteredEvents.map((event) => (
-            <div key={event.id} className="bg-gray-800 rounded-lg border border-gray-700 hover:border-gray-600 transition-colors">
+            <div key={event.id} className={`${themeClasses.bg.card} rounded-lg border ${themeClasses.border.primary} ${themeClasses.hover.bg} transition-colors`}>
               {/* Mobile Layout */}
               <div className="sm:hidden">
                 <div className="p-4">
@@ -548,7 +568,7 @@ const Events = () => {
                         {getEventTypeIcon(event.type)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-base font-semibold text-white mb-1 break-words">
+                        <h3 className={`text-base font-semibold ${themeClasses.text.primary} mb-1 break-words`}>
                           {safeString(event.name)}
                         </h3>
                         <div className="flex items-center space-x-2 mb-2">
@@ -566,19 +586,19 @@ const Events = () => {
                     <div className="relative">
                       <button 
                         onClick={() => toggleMobileMenu(event.id)}
-                        className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-gray-700 transition-colors touch-manipulation"
+                        className={`p-2 ${themeClasses.text.muted} ${themeClasses.hover.text} rounded-lg ${themeClasses.hover.bg} transition-colors touch-manipulation`}
                       >
                         <MoreVertical className="w-5 h-5" />
                       </button>
                       
                       {showMobileMenu[event.id] && (
-                        <div className="absolute right-0 top-full mt-1 bg-gray-700 border border-gray-600 rounded-lg shadow-lg z-10 min-w-[120px]">
+                        <div className={`absolute right-0 top-full mt-1 ${themeClasses.bg.secondary} border ${themeClasses.border.secondary} rounded-lg shadow-lg z-10 min-w-[120px]`}>
                           <button 
                             onClick={() => {
                               handleEdit(event)
                               toggleMobileMenu(event.id)
                             }}
-                            className="w-full text-left px-4 py-3 text-sm text-white hover:bg-gray-600 flex items-center space-x-2 touch-manipulation"
+                            className={`w-full text-left px-4 py-3 text-sm ${themeClasses.text.primary} ${themeClasses.hover.bg} flex items-center space-x-2 touch-manipulation`}
                           >
                             <Edit className="w-4 h-4" />
                             <span>Edit</span>
@@ -588,7 +608,7 @@ const Events = () => {
                               handleDelete(event.id)
                               toggleMobileMenu(event.id)
                             }}
-                            className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-gray-600 flex items-center space-x-2 touch-manipulation"
+                            className={`w-full text-left px-4 py-3 text-sm text-red-400 ${themeClasses.hover.bg} flex items-center space-x-2 touch-manipulation`}
                           >
                             <Trash2 className="w-4 h-4" />
                             <span>Delete</span>
@@ -599,33 +619,27 @@ const Events = () => {
                   </div>
 
                   {/* Description */}
-                  <p className="text-sm text-gray-400 mb-4 break-words">
+                  <p className={`text-sm ${themeClasses.text.muted} mb-4 break-words`}>
                     {safeString(event.description)}
                   </p>
 
                   {/* Key Metrics Grid */}
                   <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div className="bg-gray-900/50 rounded-lg p-3">
-                      <p className="text-xs text-gray-400 mb-1">Revenue Impact</p>
-                      <p className="text-sm font-bold text-red-400">
-                        ${Math.abs(safeNumber(event.revenueImpact)).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="bg-gray-900/50 rounded-lg p-3">
-                      <p className="text-xs text-gray-400 mb-1">Downtime</p>
+                    <div className={`${isDarkMode ? 'bg-gray-900/50' : 'bg-gray-100'} rounded-lg p-3`}>
+                      <p className={`text-xs ${themeClasses.text.muted} mb-1`}>Downtime</p>
                       <p className="text-sm font-bold text-orange-400">
                         {safeNumber(event.downtime)}h
                       </p>
                     </div>
-                    <div className="bg-gray-900/50 rounded-lg p-3">
-                      <p className="text-xs text-gray-400 mb-1">Location</p>
-                      <p className="text-sm font-medium text-white truncate">
+                    <div className={`${isDarkMode ? 'bg-gray-900/50' : 'bg-gray-100'} rounded-lg p-3`}>
+                      <p className={`text-xs ${themeClasses.text.muted} mb-1`}>Location</p>
+                      <p className={`text-sm font-medium ${themeClasses.text.primary} truncate`}>
                         {safeString(event.location)}
                       </p>
                     </div>
-                    <div className="bg-gray-900/50 rounded-lg p-3">
-                      <p className="text-xs text-gray-400 mb-1">Date</p>
-                      <p className="text-sm font-medium text-white">
+                    <div className={`${isDarkMode ? 'bg-gray-900/50' : 'bg-gray-100'} rounded-lg p-3`}>
+                      <p className={`text-xs ${themeClasses.text.muted} mb-1`}>Date</p>
+                      <p className={`text-sm font-medium ${themeClasses.text.primary}`}>
                         {event.date ? new Date(event.date).toLocaleDateString() : 'N/A'}
                       </p>
                     </div>
@@ -633,20 +647,20 @@ const Events = () => {
 
                   {/* Affected Systems */}
                   <div className="mb-3">
-                    <p className="text-xs text-gray-400 mb-2">Affected Systems:</p>
+                    <p className={`text-xs ${themeClasses.text.muted} mb-2`}>Affected Systems:</p>
                     <div className="flex flex-wrap gap-1">
                       {safeArray(event.affectedSystems).slice(0, 3).map((system, index) => (
-                        <span key={index} className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded">
+                        <span key={index} className={`px-2 py-1 ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'} text-xs rounded`}>
                           {system}
                         </span>
                       ))}
                       {safeArray(event.affectedSystems).length > 3 && (
-                        <span className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded">
+                        <span className={`px-2 py-1 ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'} text-xs rounded`}>
                           +{safeArray(event.affectedSystems).length - 3} more
                         </span>
                       )}
                       {safeArray(event.affectedSystems).length === 0 && (
-                        <span className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded">None specified</span>
+                        <span className={`px-2 py-1 ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'} text-xs rounded`}>None specified</span>
                       )}
                     </div>
                   </div>
@@ -654,16 +668,16 @@ const Events = () => {
                   {/* Financial Summary */}
                   <div className="grid grid-cols-3 gap-2 text-xs">
                     <div>
-                      <p className="text-gray-400 mb-1">Prevention</p>
+                      <p className={`${themeClasses.text.muted} mb-1`}>Prevention</p>
                       <p className="font-medium text-blue-400">${safeNumber(event.preventionCost).toLocaleString()}</p>
                     </div>
                     <div>
-                      <p className="text-gray-400 mb-1">Actual Loss</p>
+                      <p className={`${themeClasses.text.muted} mb-1`}>Actual Loss</p>
                       <p className="font-medium text-red-400">${safeNumber(event.actualLoss).toLocaleString()}</p>
                     </div>
                     <div>
-                      <p className="text-gray-400 mb-1">Recovery</p>
-                      <p className="font-medium text-white">{safeString(event.recoveryTime) || 'N/A'}</p>
+                      <p className={`${themeClasses.text.muted} mb-1`}>Recovery</p>
+                      <p className={`font-medium ${themeClasses.text.primary}`}>{safeString(event.recoveryTime) || 'N/A'}</p>
                     </div>
                   </div>
                 </div>
@@ -682,10 +696,10 @@ const Events = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-lg lg:text-xl font-semibold text-white mb-1 break-words">
+                          <h3 className={`text-lg lg:text-xl font-semibold ${themeClasses.text.primary} mb-1 break-words`}>
                             {safeString(event.name)}
                           </h3>
-                          <p className="text-sm text-gray-400 mb-2 break-words">
+                          <p className={`text-sm ${themeClasses.text.muted} mb-2 break-words`}>
                             {safeString(event.description)}
                           </p>
                         </div>
@@ -702,64 +716,64 @@ const Events = () => {
                       {/* Event Metrics Grid */}
                       <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 lg:gap-4 mb-4">
                         <div>
-                          <p className="text-xs text-gray-400">Revenue Impact</p>
+                          <p className={`text-xs ${themeClasses.text.muted}`}>Revenue Impact</p>
                           <p className="text-sm font-bold text-red-400">
                             ${Math.abs(safeNumber(event.revenueImpact)).toLocaleString()}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-400">Downtime</p>
+                          <p className={`text-xs ${themeClasses.text.muted}`}>Downtime</p>
                           <p className="text-sm font-bold text-orange-400">{safeNumber(event.downtime)}h</p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-400">Location</p>
-                          <p className="text-sm font-medium text-white truncate">{safeString(event.location)}</p>
+                          <p className={`text-xs ${themeClasses.text.muted}`}>Location</p>
+                          <p className={`text-sm font-medium ${themeClasses.text.primary} truncate`}>{safeString(event.location)}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-400">Date</p>
-                          <p className="text-sm font-medium text-white">
+                          <p className={`text-xs ${themeClasses.text.muted}`}>Date</p>
+                          <p className={`text-sm font-medium ${themeClasses.text.primary}`}>
                             {event.date ? new Date(event.date).toLocaleDateString() : 'N/A'}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-400">Duration</p>
-                          <p className="text-sm font-medium text-white">{safeString(event.duration)}</p>
+                          <p className={`text-xs ${themeClasses.text.muted}`}>Duration</p>
+                          <p className={`text-sm font-medium ${themeClasses.text.primary}`}>{safeString(event.duration)}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-400">Affected Staff</p>
-                          <p className="text-sm font-medium text-white">{safeNumber(event.employees_affected)}</p>
+                          <p className={`text-xs ${themeClasses.text.muted}`}>Affected Staff</p>
+                          <p className={`text-sm font-medium ${themeClasses.text.primary}`}>{safeNumber(event.employees_affected)}</p>
                         </div>
                       </div>
 
                       {/* Affected Systems */}
                       <div className="mb-3">
-                        <p className="text-xs text-gray-400 mb-2">Affected Systems:</p>
+                        <p className={`text-xs ${themeClasses.text.muted} mb-2`}>Affected Systems:</p>
                         <div className="flex flex-wrap gap-2">
                           {safeArray(event.affectedSystems).map((system, index) => (
-                            <span key={index} className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded">
+                            <span key={index} className={`px-2 py-1 ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'} text-xs rounded`}>
                               {system}
                             </span>
                           ))}
                           {safeArray(event.affectedSystems).length === 0 && (
-                            <span className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded">None specified</span>
+                            <span className={`px-2 py-1 ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'} text-xs rounded`}>None specified</span>
                           )}
                         </div>
                       </div>
 
                       {/* Financial Impact */}
-                      <div className="border-t border-gray-700 pt-3">
+                      <div className={`border-t ${themeClasses.border.primary} pt-3`}>
                         <div className="grid grid-cols-3 gap-4 text-sm">
                           <div>
-                            <p className="text-gray-400">Prevention Cost</p>
+                            <p className={themeClasses.text.muted}>Prevention Cost</p>
                             <p className="font-medium text-blue-400">${safeNumber(event.preventionCost).toLocaleString()}</p>
                           </div>
                           <div>
-                            <p className="text-gray-400">Actual Loss</p>
+                            <p className={themeClasses.text.muted}>Actual Loss</p>
                             <p className="font-medium text-red-400">${safeNumber(event.actualLoss).toLocaleString()}</p>
                           </div>
                           <div>
-                            <p className="text-gray-400">Recovery Time</p>
-                            <p className="font-medium text-white">{safeString(event.recoveryTime) || 'N/A'}</p>
+                            <p className={themeClasses.text.muted}>Recovery Time</p>
+                            <p className={`font-medium ${themeClasses.text.primary}`}>{safeString(event.recoveryTime) || 'N/A'}</p>
                           </div>
                         </div>
                       </div>
@@ -770,14 +784,14 @@ const Events = () => {
                   <div className="flex items-center space-x-2 ml-4">
                     <button 
                       onClick={() => handleEdit(event)}
-                      className="text-gray-400 hover:text-blue-400 p-2 rounded transition-colors touch-manipulation"
+                      className={`${themeClasses.text.muted} hover:text-blue-400 p-2 rounded transition-colors touch-manipulation`}
                       title="Edit Event"
                     >
                       <Edit className="w-5 h-5" />
                     </button>
                     <button 
                       onClick={() => handleDelete(event.id)}
-                      className="text-gray-400 hover:text-red-400 p-2 rounded transition-colors touch-manipulation"
+                      className={`${themeClasses.text.muted} hover:text-red-400 p-2 rounded transition-colors touch-manipulation`}
                       title="Delete Event"
                     >
                       <Trash2 className="w-5 h-5" />
@@ -792,9 +806,9 @@ const Events = () => {
         {/* Empty State */}
         {filteredEvents.length === 0 && (
           <div className="text-center py-8 sm:py-12">
-            <AlertTriangle className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-white mb-2">No events found</h3>
-            <p className="text-gray-400 mb-4 text-sm sm:text-base px-4">
+            <AlertTriangle className={`w-12 h-12 sm:w-16 sm:h-16 ${themeClasses.text.muted} mx-auto mb-4`} />
+            <h3 className={`text-lg font-medium ${themeClasses.text.primary} mb-2`}>No events found</h3>
+            <p className={`${themeClasses.text.muted} mb-4 text-sm sm:text-base px-4`}>
               Try adjusting your search or filter criteria, or create some sample data
             </p>
             <button 
@@ -820,6 +834,8 @@ const Events = () => {
               resetForm()
             }}
             saving={saving}
+            themeClasses={themeClasses}
+            isDarkMode={isDarkMode}
           />
         )}
       </div>
@@ -828,7 +844,7 @@ const Events = () => {
 }
 
 // Responsive Event Modal Component
-const EventModal = ({ event, formData, onInputChange, onSystemsChange, onSubmit, onCancel, saving }) => {
+const EventModal = ({ event, formData, onInputChange, onSystemsChange, onSubmit, onCancel, saving, themeClasses, isDarkMode }) => {
   const handleSubmit = (e) => {
     e.preventDefault()
     onSubmit()
@@ -836,16 +852,16 @@ const EventModal = ({ event, formData, onInputChange, onSystemsChange, onSubmit,
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-lg w-full max-w-4xl max-h-[95vh] overflow-y-auto">
+      <div className={`${themeClasses.bg.card} rounded-lg w-full max-w-4xl max-h-[95vh] overflow-y-auto`}>
         <div className="p-4 sm:p-6">
           {/* Modal Header */}
           <div className="flex justify-between items-center mb-4 sm:mb-6">
-            <h3 className="text-xl sm:text-2xl font-bold text-white">
+            <h3 className={`text-xl sm:text-2xl font-bold ${themeClasses.text.primary}`}>
               {event ? 'Edit Event' : 'Add New Event'}
             </h3>
             <button 
               onClick={onCancel}
-              className="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-700 touch-manipulation"
+              className={`${themeClasses.text.muted} ${themeClasses.hover.text} p-2 rounded-lg ${themeClasses.hover.bg} touch-manipulation`}
             >
               <X className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
@@ -855,25 +871,31 @@ const EventModal = ({ event, formData, onInputChange, onSystemsChange, onSubmit,
             {/* Form Fields - Mobile First */}
             <div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Event Name</label>
+                <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>Event Name</label>
                 <input
                   type="text"
                   name="name"
                   value={formData.name}
                   onChange={onInputChange}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation"
+                  className={`
+                    w-full rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation
+                    ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}
+                  `}
                   required
                   placeholder="Enter event name"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Type</label>
+                <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>Type</label>
                 <select
                   name="type"
                   value={formData.type}
                   onChange={onInputChange}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation"
+                  className={`
+                    w-full rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation
+                    ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}
+                  `}
                 >
                   <option value="cyber_attack">Cyber Attack</option>
                   <option value="supply_disruption">Supply Disruption</option>
@@ -885,12 +907,15 @@ const EventModal = ({ event, formData, onInputChange, onSystemsChange, onSubmit,
 
             <div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-3 sm:gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Severity</label>
+                <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>Severity</label>
                 <select
                   name="severity"
                   value={formData.severity}
                   onChange={onInputChange}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation"
+                  className={`
+                    w-full rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation
+                    ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}
+                  `}
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -900,24 +925,30 @@ const EventModal = ({ event, formData, onInputChange, onSystemsChange, onSubmit,
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Date</label>
+                <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>Date</label>
                 <input
                   type="date"
                   name="date"
                   value={formData.date}
                   onChange={onInputChange}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation"
+                  className={`
+                    w-full rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation
+                    ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}
+                  `}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Status</label>
+                <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>Status</label>
                 <select
                   name="status"
                   value={formData.status}
                   onChange={onInputChange}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation"
+                  className={`
+                    w-full rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation
+                    ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}
+                  `}
                 >
                   <option value="resolved">Resolved</option>
                   <option value="in_progress">In Progress</option>
@@ -928,26 +959,32 @@ const EventModal = ({ event, formData, onInputChange, onSystemsChange, onSubmit,
 
             <div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Location</label>
+                <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>Location</label>
                 <input
                   type="text"
                   name="location"
                   value={formData.location}
                   onChange={onInputChange}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation"
+                  className={`
+                    w-full rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation
+                    ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}
+                  `}
                   required
                   placeholder="Enter location"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Duration</label>
+                <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>Duration</label>
                 <input
                   type="text"
                   name="duration"
                   value={formData.duration}
                   onChange={onInputChange}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation"
+                  className={`
+                    w-full rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation
+                    ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}
+                  `}
                   required
                   placeholder="e.g., 2 hours, 1 day"
                 />
@@ -955,39 +992,48 @@ const EventModal = ({ event, formData, onInputChange, onSystemsChange, onSubmit,
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
+              <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>Description</label>
               <textarea
                 name="description"
                 value={formData.description}
                 onChange={onInputChange}
                 rows="3"
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation"
+                className={`
+                  w-full rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation
+                  ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}
+                `}
                 placeholder="Describe the event details..."
               />
             </div>
 
             <div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Revenue Impact ($)</label>
+                <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>Revenue Impact ($)</label>
                 <input
                   type="number"
                   name="revenue_impact"
                   value={formData.revenue_impact}
                   onChange={onInputChange}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation"
+                  className={`
+                    w-full rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation
+                    ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}
+                  `}
                   min="0"
                   placeholder="0"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Downtime (hours)</label>
+                <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>Downtime (hours)</label>
                 <input
                   type="number"
                   name="downtime"
                   value={formData.downtime}
                   onChange={onInputChange}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation"
+                  className={`
+                    w-full rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation
+                    ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}
+                  `}
                   min="0"
                   placeholder="0"
                 />
@@ -996,26 +1042,32 @@ const EventModal = ({ event, formData, onInputChange, onSystemsChange, onSubmit,
 
             <div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Prevention Cost ($)</label>
+                <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>Prevention Cost ($)</label>
                 <input
                   type="number"
                   name="prevention_cost"
                   value={formData.prevention_cost}
                   onChange={onInputChange}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation"
+                  className={`
+                    w-full rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation
+                    ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}
+                  `}
                   min="0"
                   placeholder="0"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Actual Loss ($)</label>
+                <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>Actual Loss ($)</label>
                 <input
                   type="number"
                   name="actual_loss"
                   value={formData.actual_loss}
                   onChange={onInputChange}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation"
+                  className={`
+                    w-full rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation
+                    ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}
+                  `}
                   min="0"
                   placeholder="0"
                 />
@@ -1024,49 +1076,61 @@ const EventModal = ({ event, formData, onInputChange, onSystemsChange, onSubmit,
 
             <div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Employees Affected</label>
+                <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>Employees Affected</label>
                 <input
                   type="number"
                   name="employees_affected"
                   value={formData.employees_affected}
                   onChange={onInputChange}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation"
+                  className={`
+                    w-full rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation
+                    ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}
+                  `}
                   min="0"
                   placeholder="0"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Recovery Time</label>
+                <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>Recovery Time</label>
                 <input
                   type="text"
                   name="recovery_time"
                   value={formData.recovery_time}
                   onChange={onInputChange}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation"
+                  className={`
+                    w-full rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation
+                    ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}
+                  `}
                   placeholder="e.g., 4 hours, Ongoing"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Affected Systems</label>
+              <label className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}>Affected Systems</label>
               <input
                 type="text"
                 value={formData.affected_systems.join(', ')}
                 onChange={onSystemsChange}
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation"
+                className={`
+                  w-full rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base touch-manipulation
+                  ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}
+                `}
                 placeholder="Enter systems separated by commas (e.g., CRM, Email Server, Database)"
               />
-              <p className="text-xs text-gray-400 mt-1">Separate multiple systems with commas</p>
+              <p className={`text-xs ${themeClasses.text.muted} mt-1`}>Separate multiple systems with commas</p>
             </div>
 
             {/* Modal Actions */}
-            <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-4 sm:pt-6 border-t border-gray-700">
+            <div className={`flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-4 sm:pt-6 border-t ${themeClasses.border.primary}`}>
               <button 
                 type="button"
                 onClick={onCancel}
-                className="w-full sm:w-auto px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition-colors text-sm sm:text-base touch-manipulation"
+                className={`
+                  w-full sm:w-auto px-6 py-3 rounded-lg font-semibold transition-colors text-sm sm:text-base touch-manipulation
+                  ${isDarkMode ? 'bg-gray-600 hover:bg-gray-700 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-900'}
+                `}
               >
                 Cancel
               </button>
