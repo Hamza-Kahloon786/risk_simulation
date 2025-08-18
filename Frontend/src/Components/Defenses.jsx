@@ -246,27 +246,29 @@ const Defenses = () => {
 
   return (
     <div className="min-h-screen bg-gray-900">
-      <div className="p-8 overflow-y-auto">
+      <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 overflow-y-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white">Defense Systems & Security</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white">Defense Systems & Security</h1>
             <p className="text-gray-400 mt-1">Monitor security investments and their financial returns</p>
           </div>
-          <div className="flex space-x-4">
+          <div className="flex gap-2 flex-wrap">
             <button 
               onClick={handleCreateSampleData}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+              className="px-3 py-2 sm:px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+              aria-label="Create sample data"
             >
               <Plus className="w-5 h-5" />
-              <span>Create Sample Data</span>
+              <span className="hidden sm:inline">Create Sample Data</span>
             </button>
             <button 
               onClick={() => setShowAddForm(true)}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+              className="px-3 py-2 sm:px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+              aria-label="Add defense"
             >
               <Plus className="w-5 h-5" />
-              <span>Add Defense</span>
+              <span className="hidden sm:inline">Add Defense</span>
             </button>
           </div>
         </div>
@@ -344,7 +346,7 @@ const Defenses = () => {
         </div>
 
         {/* Filters */}
-        <div className="flex items-center space-x-4 mb-6">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-6">
           <select 
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
@@ -376,14 +378,14 @@ const Defenses = () => {
           {defenses.map((defense) => (
             <div key={defense.id} className="bg-gray-800 p-6 rounded-lg hover:bg-gray-750 transition-colors">
               {/* Defense Header */}
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4">
                 <div className="flex items-center space-x-3">
                   <div className={`w-10 h-10 ${getCategoryColor(defense.category)} rounded-lg flex items-center justify-center text-white`}>
                     {getCategoryIcon(defense.category)}
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-white">{defense.name}</h3>
-                    <p className="text-sm text-gray-400">{defense.vendor}</p>
+                    <p className="text-sm text-gray-400 truncate max-w-[70vw] sm:max-w-xs">{defense.vendor}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
