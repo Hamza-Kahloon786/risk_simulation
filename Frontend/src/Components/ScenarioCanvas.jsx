@@ -933,47 +933,49 @@ const ScenarioCanvas = () => {
     <div className="h-screen flex flex-col bg-gray-900">
       {/* Header */}
       <div className="bg-gray-800 border-b border-gray-700 px-4 sm:px-6 py-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center space-x-4">
             <Link to="/scenarios" className="text-gray-400 hover:text-white">
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
               <h1 className="text-xl font-bold text-white">{scenario?.name || 'Untitled Scenario'}</h1>
-              <div className="flex items-center space-x-2 text-sm text-gray-400">
-                <span>{scenario?.description || 'No description'}</span>
+              <div className="flex items-center space-x-2 text-sm text-gray-400 flex-wrap">
+                <span className="truncate max-w-[65vw] sm:max-w-none">{scenario?.description || 'No description'}</span>
                 <span className="w-1 h-1 bg-green-400 rounded-full"></span>
                 <span>Auto-saved</span>
               </div>
             </div>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center gap-2 flex-wrap w-full lg:w-auto lg:justify-end">
             <button 
               onClick={() => setSidebarOpen(true)}
               className="px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg flex items-center space-x-2 lg:hidden"
+              aria-label="Open components drawer"
             >
               <LayoutGrid className="w-4 h-4" />
-              <span>Components</span>
+              <span className="hidden sm:inline">Components</span>
             </button>
-            <button className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg flex items-center space-x-2">
+            <button className="px-3 py-2 sm:px-4 bg-gray-600 hover:bg-gray-700 text-white rounded-lg flex items-center space-x-2" aria-label="Save">
               <Save className="w-4 h-4" />
-              <span>Save</span>
+              <span className="hidden sm:inline">Save</span>
             </button>
-            <button className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg flex items-center space-x-2">
+            <button className="px-3 py-2 sm:px-4 bg-gray-600 hover:bg-gray-700 text-white rounded-lg flex items-center space-x-2" aria-label="Share">
               <Share className="w-4 h-4" />
-              <span>Share</span>
+              <span className="hidden sm:inline">Share</span>
             </button>
             <button 
               onClick={handleRunAnalysis}
               disabled={analysisLoading || riskEvents.length === 0}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg flex items-center space-x-2"
+              className="w-full sm:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg flex items-center justify-center space-x-2"
+              aria-label="Run Scenario"
             >
               {analysisLoading ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
               ) : (
                 <Play className="w-4 h-4" />
               )}
-              <span>{analysisLoading ? 'Running...' : 'Run Scenario'}</span>
+              <span className="hidden sm:inline">{analysisLoading ? 'Running...' : 'Run Scenario'}</span>
             </button>
           </div>
         </div>
@@ -983,11 +985,11 @@ const ScenarioCanvas = () => {
         {/* Main Canvas */}
         <div className="flex-1 bg-gray-900 relative order-1">
           {/* Canvas Header */}
-          <div className="bg-gray-800 border-b border-gray-700 px-6 py-4">
-            <div className="flex items-center justify-between">
+          <div className="bg-gray-800 border-b border-gray-700 px-4 sm:px-6 py-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-white">Scenario Canvas</h2>
-                <div className="flex items-center space-x-4 mt-1">
+                <div className="flex items-center flex-wrap gap-2 mt-1">
                   <span className="text-sm text-gray-400">Preview:</span>
                   <span className="text-blue-400 text-sm">
                     P50 ${analysisResults ? (analysisResults.p50_median_impact / 1000).toFixed(0) + 'K' : 'N/A'}
@@ -997,7 +999,7 @@ const ScenarioCanvas = () => {
                   </span>
                 </div>
               </div>
-              <button className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg flex items-center space-x-2">
+              <button className="w-full sm:w-auto px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg flex items-center justify-center space-x-2">
                 <LayoutGrid className="w-4 h-4" />
                 <span>Smart Layout</span>
               </button>
