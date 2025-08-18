@@ -419,6 +419,7 @@ const ScenarioCanvas = () => {
   const [showResults, setShowResults] = useState(false)
   const [analysisLoading, setAnalysisLoading] = useState(false)
   const [analysisResults, setAnalysisResults] = useState(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     console.log('ScenarioCanvas mounted with ID:', id)
@@ -767,10 +768,171 @@ const ScenarioCanvas = () => {
   const progress = Math.min(Math.floor((totalComponents / 6) * 100), 100)
   const completedSteps = Math.min(Math.floor(totalComponents / 2), 4)
 
+  const SidebarContent = () => (
+    <div className="p-6">
+      <h3 className="text-lg font-semibold text-white mb-4">Scenario Components</h3>
+      <p className="text-sm text-gray-400 mb-6">Add components to build your scenario</p>
+
+      {/* Current Scenario Info */}
+      <div className="bg-gray-700 rounded-lg p-4 mb-6">
+        <h4 className="text-sm font-medium text-white mb-2">Current Scenario</h4>
+        <p className="text-xs text-gray-300">{scenario?.name}</p>
+        <p className="text-xs text-gray-400 mt-1">ID: {id}</p>
+        <div className="mt-2 text-xs">
+          <span className="text-gray-400">Status: </span>
+          <span className="text-green-400">{scenario?.status || 'Active'}</span>
+        </div>
+      </div>
+
+      {/* Risk Events */}
+      <div className="mb-8">
+        <h4 className="text-sm font-medium text-gray-300 mb-3 uppercase tracking-wider">Risk Events ({riskEvents.length})</h4>
+        <div className="space-y-3">
+          <button 
+            onClick={() => setShowRiskEventModal(true)}
+            className="w-full flex items-center space-x-3 p-3 bg-gray-700 hover:bg-gray-600 rounded-lg border-2 border-dashed border-gray-600 hover:border-red-500 transition-colors"
+          >
+            <div className="w-8 h-8 bg-red-500 rounded flex items-center justify-center">
+              <Zap className="w-4 h-4 text-white" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-medium text-white">Add Cyber Attack</p>
+              <p className="text-xs text-gray-400">Ransomware, data breaches</p>
+            </div>
+          </button>
+
+          <button 
+            onClick={() => setShowRiskEventModal(true)}
+            className="w-full flex items-center space-x-3 p-3 bg-gray-700 hover:bg-gray-600 rounded-lg border-2 border-dashed border-gray-600 hover:border-orange-500 transition-colors"
+          >
+            <div className="w-8 h-8 bg-orange-500 rounded flex items-center justify-center">
+              <Building className="w-4 h-4 text-white" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-medium text-white">Add Supply Disruption</p>
+              <p className="text-xs text-gray-400">Supplier failures, logistics</p>
+            </div>
+          </button>
+
+          <button 
+            onClick={() => setShowRiskEventModal(true)}
+            className="w-full flex items-center space-x-3 p-3 bg-gray-700 hover:bg-gray-600 rounded-lg border-2 border-dashed border-gray-600 hover:border-yellow-500 transition-colors"
+          >
+            <div className="w-8 h-8 bg-yellow-500 rounded flex items-center justify-center">
+              <AlertTriangle className="w-4 h-4 text-white" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-medium text-white">Add Operational Risk</p>
+              <p className="text-xs text-gray-400">Process failures, human errors</p>
+            </div>
+          </button>
+
+          {/* Show existing risk events */}
+          {riskEvents.map((event) => (
+            <div key={event._id || event.id} className="bg-gray-600 rounded-lg p-3 border border-gray-500">
+              <div className="flex items-center space-x-3">
+                <div className={`w-6 h-6 ${getColorForRiskType(event.type)} rounded flex items-center justify-center`}>
+                  {getIconForRiskType(event.type)}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-white">{event.name}</p>
+                  <p className="text-xs text-gray-400">
+                    {event.probability}% • ${(event.impact_min || 0).toLocaleString()}-{(event.impact_max || 0).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Business Assets */}
+      <div className="mb-8">
+        <h4 className="text-sm font-medium text-gray-300 mb-3 uppercase tracking-wider">Business Assets ({businessAssets.length})</h4>
+        <div className="space-y-3">
+          <button 
+            onClick={() => setShowBusinessAssetModal(true)}
+            className="w-full flex items-center space-x-3 p-3 bg-gray-700 hover:bg-gray-600 rounded-lg border-2 border-dashed border-gray-600 hover:border-blue-500 transition-colors"
+          >
+            <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
+              <Server className="w-4 h-4 text-white" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-medium text-white">Add Critical System</p>
+              <p className="text-xs text-gray-400">IT infrastructure, databases</p>
+            </div>
+          </button>
+
+          <button 
+            onClick={() => setShowBusinessAssetModal(true)}
+            className="w-full flex items-center space-x-3 p-3 bg-gray-700 hover:bg-gray-600 rounded-lg border-2 border-dashed border-gray-600 hover:border-blue-500 transition-colors"
+          >
+            <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
+              <MapPin className="w-4 h-4 text-white" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-medium text-white">Add Business Location</p>
+              <p className="text-xs text-gray-400">Offices, plants</p>
+            </div>
+          </button>
+
+          {/* Show existing business assets */}
+          {businessAssets.map((asset) => (
+            <div key={asset._id || asset.id} className="bg-gray-600 rounded-lg p-3 border border-gray-500">
+              <div className="flex items-center space-x-3">
+                <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center">
+                  {getIconForAssetType(asset.type)}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-white">{asset.name}</p>
+                  <p className="text-xs text-gray-400">${asset.value?.toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Defense Systems */}
+      <div>
+        <h4 className="text-sm font-medium text-gray-300 mb-3 uppercase tracking-wider">Defense Systems ({defenseSystems.length})</h4>
+        <div className="space-y-3">
+          <button 
+            onClick={() => setShowDefenseSystemModal(true)}
+            className="w-full flex items-center space-x-3 p-3 bg-gray-700 hover:bg-gray-600 rounded-lg border-2 border-dashed border-gray-600 hover:border-green-500 transition-colors"
+          >
+            <div className="w-8 h-8 bg-green-500 rounded flex items-center justify-center">
+              <Shield className="w-4 h-4 text-white" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-medium text-white">Add Security Control</p>
+              <p className="text-xs text-gray-400">Firewalls, monitoring</p>
+            </div>
+          </button>
+
+          {/* Show existing defense systems */}
+          {defenseSystems.map((defense) => (
+            <div key={defense._id || defense.id} className="bg-gray-600 rounded-lg p-3 border border-gray-500">
+              <div className="flex items-center space-x-3">
+                <div className="w-6 h-6 bg-green-500 rounded flex items-center justify-center">
+                  <Shield className="w-3 h-3 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-white">{defense.name}</p>
+                  <p className="text-xs text-gray-400">{defense.effectiveness}% • ${defense.cost?.toLocaleString()}/yr</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <div className="h-screen flex flex-col bg-gray-900">
       {/* Header */}
-      <div className="bg-gray-800 border-b border-gray-700 px-6 py-4">
+      <div className="bg-gray-800 border-b border-gray-700 px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Link to="/scenarios" className="text-gray-400 hover:text-white">
@@ -786,6 +948,13 @@ const ScenarioCanvas = () => {
             </div>
           </div>
           <div className="flex items-center space-x-3">
+            <button 
+              onClick={() => setSidebarOpen(true)}
+              className="px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg flex items-center space-x-2 lg:hidden"
+            >
+              <LayoutGrid className="w-4 h-4" />
+              <span>Components</span>
+            </button>
             <button className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg flex items-center space-x-2">
               <Save className="w-4 h-4" />
               <span>Save</span>
@@ -810,9 +979,9 @@ const ScenarioCanvas = () => {
         </div>
       </div>
 
-      <div className="flex-1 flex">
+      <div className="flex-1 flex flex-col lg:flex-row">
         {/* Main Canvas */}
-        <div className="flex-1 bg-gray-900 relative">
+        <div className="flex-1 bg-gray-900 relative order-1">
           {/* Canvas Header */}
           <div className="bg-gray-800 border-b border-gray-700 px-6 py-4">
             <div className="flex items-center justify-between">
@@ -882,7 +1051,7 @@ const ScenarioCanvas = () => {
               </div>
 
               {/* Action Steps */}
-              <div className="grid grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 {[
                   { label: 'Add Components', completed: riskEvents.length > 0 },
                   { label: 'Verify Connections', completed: riskEvents.length > 0 && businessAssets.length > 0 },
@@ -1042,168 +1211,27 @@ const ScenarioCanvas = () => {
           </div>
         </div>
 
-        {/* Right Sidebar - Components */}
-        <div className="w-80 bg-gray-800 border-l border-gray-700 overflow-y-auto">
-          <div className="p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Scenario Components</h3>
-            <p className="text-sm text-gray-400 mb-6">Add components to build your scenario</p>
-
-            {/* Current Scenario Info */}
-            <div className="bg-gray-700 rounded-lg p-4 mb-6">
-              <h4 className="text-sm font-medium text-white mb-2">Current Scenario</h4>
-              <p className="text-xs text-gray-300">{scenario?.name}</p>
-              <p className="text-xs text-gray-400 mt-1">ID: {id}</p>
-              <div className="mt-2 text-xs">
-                <span className="text-gray-400">Status: </span>
-                <span className="text-green-400">{scenario?.status || 'Active'}</span>
-              </div>
-            </div>
-
-            {/* Risk Events */}
-            <div className="mb-8">
-              <h4 className="text-sm font-medium text-gray-300 mb-3 uppercase tracking-wider">Risk Events ({riskEvents.length})</h4>
-              <div className="space-y-3">
-                <button 
-                  onClick={() => setShowRiskEventModal(true)}
-                  className="w-full flex items-center space-x-3 p-3 bg-gray-700 hover:bg-gray-600 rounded-lg border-2 border-dashed border-gray-600 hover:border-red-500 transition-colors"
-                >
-                  <div className="w-8 h-8 bg-red-500 rounded flex items-center justify-center">
-                    <Zap className="w-4 h-4 text-white" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm font-medium text-white">Add Cyber Attack</p>
-                    <p className="text-xs text-gray-400">Ransomware, data breaches</p>
-                  </div>
-                </button>
-
-                <button 
-                  onClick={() => setShowRiskEventModal(true)}
-                  className="w-full flex items-center space-x-3 p-3 bg-gray-700 hover:bg-gray-600 rounded-lg border-2 border-dashed border-gray-600 hover:border-orange-500 transition-colors"
-                >
-                  <div className="w-8 h-8 bg-orange-500 rounded flex items-center justify-center">
-                    <Building className="w-4 h-4 text-white" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm font-medium text-white">Add Supply Disruption</p>
-                    <p className="text-xs text-gray-400">Supplier failures, logistics</p>
-                  </div>
-                </button>
-
-                <button 
-                  onClick={() => setShowRiskEventModal(true)}
-                  className="w-full flex items-center space-x-3 p-3 bg-gray-700 hover:bg-gray-600 rounded-lg border-2 border-dashed border-gray-600 hover:border-yellow-500 transition-colors"
-                >
-                  <div className="w-8 h-8 bg-yellow-500 rounded flex items-center justify-center">
-                    <AlertTriangle className="w-4 h-4 text-white" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm font-medium text-white">Add Operational Risk</p>
-                    <p className="text-xs text-gray-400">Process failures, human errors</p>
-                  </div>
-                </button>
-
-                {/* Show existing risk events */}
-                {riskEvents.map((event, index) => (
-                  <div key={event._id || event.id} className="bg-gray-600 rounded-lg p-3 border border-gray-500">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-6 h-6 ${getColorForRiskType(event.type)} rounded flex items-center justify-center`}>
-                        {getIconForRiskType(event.type)}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-white">{event.name}</p>
-                        <p className="text-xs text-gray-400">
-                          {event.probability}% • ${(event.impact_min || 0).toLocaleString()}-${(event.impact_max || 0).toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Business Assets */}
-            <div className="mb-8">
-              <h4 className="text-sm font-medium text-gray-300 mb-3 uppercase tracking-wider">Business Assets ({businessAssets.length})</h4>
-              <div className="space-y-3">
-                <button 
-                  onClick={() => setShowBusinessAssetModal(true)}
-                  className="w-full flex items-center space-x-3 p-3 bg-gray-700 hover:bg-gray-600 rounded-lg border-2 border-dashed border-gray-600 hover:border-blue-500 transition-colors"
-                >
-                  <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
-                    <Server className="w-4 h-4 text-white" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm font-medium text-white">Add Critical System</p>
-                    <p className="text-xs text-gray-400">IT infrastructure, databases</p>
-                  </div>
-                </button>
-
-                <button 
-                  onClick={() => setShowBusinessAssetModal(true)}
-                  className="w-full flex items-center space-x-3 p-3 bg-gray-700 hover:bg-gray-600 rounded-lg border-2 border-dashed border-gray-600 hover:border-blue-500 transition-colors"
-                >
-                  <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
-                    <MapPin className="w-4 h-4 text-white" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm font-medium text-white">Add Business Location</p>
-                    <p className="text-xs text-gray-400">Offices, plants</p>
-                  </div>
-                </button>
-
-                {/* Show existing business assets */}
-                {businessAssets.map((asset, index) => (
-                  <div key={asset._id || asset.id} className="bg-gray-600 rounded-lg p-3 border border-gray-500">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center">
-                        {getIconForAssetType(asset.type)}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-white">{asset.name}</p>
-                        <p className="text-xs text-gray-400">${asset.value?.toLocaleString()}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Defense Systems */}
-            <div>
-              <h4 className="text-sm font-medium text-gray-300 mb-3 uppercase tracking-wider">Defense Systems ({defenseSystems.length})</h4>
-              <div className="space-y-3">
-                <button 
-                  onClick={() => setShowDefenseSystemModal(true)}
-                  className="w-full flex items-center space-x-3 p-3 bg-gray-700 hover:bg-gray-600 rounded-lg border-2 border-dashed border-gray-600 hover:border-green-500 transition-colors"
-                >
-                  <div className="w-8 h-8 bg-green-500 rounded flex items-center justify-center">
-                    <Shield className="w-4 h-4 text-white" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm font-medium text-white">Add Security Control</p>
-                    <p className="text-xs text-gray-400">Firewalls, monitoring</p>
-                  </div>
-                </button>
-
-                {/* Show existing defense systems */}
-                {defenseSystems.map((defense, index) => (
-                  <div key={defense._id || defense.id} className="bg-gray-600 rounded-lg p-3 border border-gray-500">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-6 h-6 bg-green-500 rounded flex items-center justify-center">
-                        <Shield className="w-3 h-3 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-white">{defense.name}</p>
-                        <p className="text-xs text-gray-400">{defense.effectiveness}% • ${defense.cost?.toLocaleString()}/yr</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+        {/* Right Sidebar - Components (Desktop) */}
+        <div className="hidden lg:block w-80 bg-gray-800 border-l border-gray-700 overflow-y-auto order-2">
+          <SidebarContent />
         </div>
       </div>
+
+      {/* Mobile Components Drawer */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setSidebarOpen(false)}></div>
+          <div className="absolute right-0 top-0 h-full w-80 bg-gray-800 border-l border-gray-700 overflow-y-auto">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700">
+              <h4 className="text-white font-semibold">Components</h4>
+              <button onClick={() => setSidebarOpen(false)} className="text-gray-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <SidebarContent />
+          </div>
+        </div>
+      )}
 
       {/* Real Working Modals */}
       {scenario && showRiskEventModal && (
