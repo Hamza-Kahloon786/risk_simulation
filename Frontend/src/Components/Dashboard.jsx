@@ -1,3 +1,4 @@
+// frontend/src/components/Dashboard.jsx
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { 
@@ -8,7 +9,10 @@ import {
   Plus,
   BarChart3,
   Eye,
-  RefreshCw
+  RefreshCw,
+  ChevronRight,
+  Calendar,
+  Clock
 } from 'lucide-react'
 import { scenariosAPI, eventsAPI, defensesAPI } from '../services/api'
 
@@ -57,7 +61,6 @@ const Dashboard = () => {
       if (eventsRes.status === 'fulfilled' && eventsRes.value.success) {
         setEvents(eventsRes.value.data || [])
       } else if (eventsRes.status === 'fulfilled' && eventsRes.value.data) {
-        // Handle case where API doesn't return success flag
         setEvents(eventsRes.value.data || [])
       }
       
@@ -65,7 +68,6 @@ const Dashboard = () => {
       if (defensesRes.status === 'fulfilled' && defensesRes.value.success) {
         setDefenses(defensesRes.value.data || [])
       } else if (defensesRes.status === 'fulfilled' && defensesRes.value.data) {
-        // Handle case where API doesn't return success flag
         setDefenses(defensesRes.value.data || [])
       }
       
@@ -75,7 +77,6 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error loading dashboard data:', error)
       setError('Failed to load some dashboard data')
-      // Still calculate stats with available data
       calculateStats(scenarios, {}, [], [])
     } finally {
       setLoading(false)
@@ -125,9 +126,9 @@ const Dashboard = () => {
       const diffInSeconds = Math.floor((now - date) / 1000)
       
       if (diffInSeconds < 60) return 'Just now'
-      if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`
-      if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`
-      if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} days ago`
+      if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
+      if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
+      if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}d ago`
       
       return date.toLocaleDateString()
     } catch (error) {
@@ -138,7 +139,6 @@ const Dashboard = () => {
   // Calculate risk distribution from real events data
   const riskDistribution = React.useMemo(() => {
     if (events.length === 0) {
-      // Return default static data if no events
       return [
         { name: 'Cyber Threats', value: 34, color: 'bg-red-500' },
         { name: 'Operational', value: 28, color: 'bg-orange-500' },
@@ -150,7 +150,6 @@ const Dashboard = () => {
     const categoryCount = events.reduce((acc, event) => {
       let category = (event.category || 'operational').toLowerCase()
       
-      // Map variations to standard categories
       if (category.includes('cyber') || category.includes('security')) {
         category = 'cyber_security'
       } else if (category.includes('financial') || category.includes('finance')) {
@@ -195,190 +194,265 @@ const Dashboard = () => {
     return 'text-green-400'
   }
 
+  const formatNumber = (num) => {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
+    return num.toString()
+  }
+
   return (
-    <div className="p-8">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Risk Simulation Dashboard</h1>
-          <p className="text-gray-400 mt-1">Monitor your organization's risk posture and scenario outcomes</p>
-        </div>
-        <div className="flex space-x-3">
-          <button 
-            onClick={loadDashboardData}
-            disabled={loading}
-            className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center space-x-2 disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            <span>Refresh</span>
-          </button>
-          <Link to="/scenarios" className="btn-primary flex items-center space-x-2">
-            <Plus className="w-5 h-5" />
-            <span>New Scenario</span>
-          </Link>
-        </div>
-      </div>
-
-      {error && (
-        <div className="mb-6 p-4 bg-yellow-900/50 border border-yellow-500 rounded-lg">
-          <div className="flex items-center space-x-2">
-            <AlertTriangle className="w-5 h-5 text-yellow-500" />
-            <p className="text-yellow-300">{error}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Total Risk Score</p>
-              <p className="text-2xl font-bold text-white">{stats.totalRiskScore}%</p>
-              <div className="flex items-center space-x-1 mt-1">
-                <span className={`text-sm ${getRiskColor(stats.totalRiskScore)}`}>
-                  {scenarios.length > 0 
-                    ? (stats.totalRiskScore > 50 ? 'High Risk' : stats.totalRiskScore > 25 ? 'Medium Risk' : 'Low Risk')
-                    : 'No Data'
-                  }
-                </span>
-              </div>
-            </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-blue-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Active Scenarios</p>
-              <p className="text-2xl font-bold text-white">{stats.activeScenarios}</p>
-              <div className="flex items-center space-x-1 mt-1">
-                <span className="text-blue-400 text-sm">{scenarios.length} total</span>
-              </div>
-            </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Activity className="w-6 h-6 text-blue-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Critical Events</p>
-              <p className="text-2xl font-bold text-white">{stats.criticalVulnerabilities}</p>
-              <div className="flex items-center space-x-1 mt-1">
-                <span className="text-red-400 text-sm">{events.length} total events</span>
-              </div>
-            </div>
-            <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-red-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Defense Coverage</p>
-              <p className="text-2xl font-bold text-white">{stats.defenseCoverage}%</p>
-              <div className="flex items-center space-x-1 mt-1">
-                <span className="text-green-400 text-sm">
-                  {defenseStats.total_cost 
-                    ? `$${((defenseStats.total_cost || 0) / 1000000).toFixed(1)}M invested`
-                    : `${defenses.length} systems`
-                  }
-                </span>
-              </div>
-            </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Shield className="w-6 h-6 text-blue-600" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Recent Scenarios */}
-        <div className="lg:col-span-2">
-          <div className="card">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-white">Recent Scenarios</h2>
-              <Link to="/scenarios" className="text-blue-400 hover:text-blue-300 text-sm">
-                View All ({scenarios.length})
-              </Link>
+    <div className="min-h-screen bg-[#0B0F1A]">
+      {/* Container with responsive padding */}
+      <div className="px-3 py-4 sm:px-4 sm:py-6 md:px-6 md:py-8 lg:px-8 max-w-[2000px] mx-auto">
+        
+        {/* Header Section */}
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white leading-tight">
+                Risk Simulation Dashboard
+              </h1>
+              <p className="text-sm sm:text-base text-gray-400 mt-1 sm:mt-2">
+                Monitor your organization's risk posture and scenario outcomes
+              </p>
             </div>
             
-            <div className="space-y-4">
-              {scenarios.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-400">No scenarios created yet</p>
-                  <Link to="/scenarios" className="text-blue-400 hover:text-blue-300 text-sm mt-2 inline-block">
-                    Create your first scenario
-                  </Link>
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+              <button 
+                onClick={loadDashboardData}
+                disabled={loading}
+                className="flex items-center justify-center space-x-2 px-3 py-2 sm:px-4 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50 touch-manipulation min-h-[44px] text-sm sm:text-base"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                <span>Refresh</span>
+              </button>
+              <Link 
+                to="/scenarios" 
+                className="flex items-center justify-center space-x-2 px-3 py-2 sm:px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors touch-manipulation min-h-[44px] text-sm sm:text-base"
+              >
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span>New Scenario</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Error Alert */}
+        {error && (
+          <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-yellow-900/50 border border-yellow-500 rounded-lg">
+            <div className="flex items-start space-x-2">
+              <AlertTriangle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+              <p className="text-yellow-300 text-sm sm:text-base">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Stats Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
+          
+          {/* Total Risk Score Card */}
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 sm:p-6 hover:bg-gray-750 transition-colors">
+            <div className="flex items-start justify-between">
+              <div className="min-w-0 flex-1">
+                <p className="text-gray-400 text-xs sm:text-sm mb-1 sm:mb-2">Total Risk Score</p>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-1">
+                  {stats.totalRiskScore}%
+                </p>
+                <div className="flex items-center space-x-1">
+                  <span className={`text-xs sm:text-sm font-medium ${getRiskColor(stats.totalRiskScore)}`}>
+                    {scenarios.length > 0 
+                      ? (stats.totalRiskScore > 50 ? 'High Risk' : stats.totalRiskScore > 25 ? 'Medium Risk' : 'Low Risk')
+                      : 'No Data'
+                    }
+                  </span>
                 </div>
-              ) : (
-                scenarios.slice(0, 5).map((scenario) => (
-                  <div key={scenario.id || scenario._id} className="flex items-center justify-between p-4 bg-gray-700 rounded-lg hover:bg-gray-650 transition-colors">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-2 h-2 ${getStatusColor(scenario.status)} rounded-full`}></div>
-                      <div>
-                        <p className="font-medium text-white">{scenario.name}</p>
-                        <p className="text-sm text-gray-400">
-                          {getRelativeTimeString(scenario.updated_at)} • {(scenario.status || 'Draft').charAt(0).toUpperCase() + (scenario.status || 'draft').slice(1)}
-                        </p>
+              </div>
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+              </div>
+            </div>
+          </div>
+
+          {/* Active Scenarios Card */}
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 sm:p-6 hover:bg-gray-750 transition-colors">
+            <div className="flex items-start justify-between">
+              <div className="min-w-0 flex-1">
+                <p className="text-gray-400 text-xs sm:text-sm mb-1 sm:mb-2">Active Scenarios</p>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-1">
+                  {stats.activeScenarios}
+                </p>
+                <div className="flex items-center space-x-1">
+                  <span className="text-blue-400 text-xs sm:text-sm">{scenarios.length} total</span>
+                </div>
+              </div>
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Activity className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+              </div>
+            </div>
+          </div>
+
+          {/* Critical Events Card */}
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 sm:p-6 hover:bg-gray-750 transition-colors">
+            <div className="flex items-start justify-between">
+              <div className="min-w-0 flex-1">
+                <p className="text-gray-400 text-xs sm:text-sm mb-1 sm:mb-2">Critical Events</p>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-1">
+                  {stats.criticalVulnerabilities}
+                </p>
+                <div className="flex items-center space-x-1">
+                  <span className="text-red-400 text-xs sm:text-sm">{events.length} total events</span>
+                </div>
+              </div>
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
+              </div>
+            </div>
+          </div>
+
+          {/* Defense Coverage Card */}
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 sm:p-6 hover:bg-gray-750 transition-colors">
+            <div className="flex items-start justify-between">
+              <div className="min-w-0 flex-1">
+                <p className="text-gray-400 text-xs sm:text-sm mb-1 sm:mb-2">Defense Coverage</p>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-1">
+                  {stats.defenseCoverage}%
+                </p>
+                <div className="flex items-center space-x-1">
+                  <span className="text-green-400 text-xs sm:text-sm truncate">
+                    {defenseStats.total_cost 
+                      ? `$${formatNumber(defenseStats.total_cost)} invested`
+                      : `${defenses.length} systems`
+                    }
+                  </span>
+                </div>
+              </div>
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 sm:gap-8">
+          
+          {/* Recent Scenarios Section */}
+          <div className="xl:col-span-2 order-1">
+            <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <h2 className="text-lg sm:text-xl font-bold text-white">Recent Scenarios</h2>
+                <Link 
+                  to="/scenarios" 
+                  className="flex items-center space-x-1 text-blue-400 hover:text-blue-300 text-sm sm:text-base transition-colors touch-manipulation"
+                >
+                  <span>View All ({scenarios.length})</span>
+                  <ChevronRight className="w-4 h-4" />
+                </Link>
+              </div>
+              
+              <div className="space-y-3 sm:space-y-4">
+                {scenarios.length === 0 ? (
+                  <div className="text-center py-8 sm:py-12">
+                    <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <BarChart3 className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <p className="text-gray-400 mb-3">No scenarios created yet</p>
+                    <Link 
+                      to="/scenarios" 
+                      className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors touch-manipulation"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Create your first scenario</span>
+                    </Link>
+                  </div>
+                ) : (
+                  scenarios.slice(0, 5).map((scenario) => (
+                    <div 
+                      key={scenario.id || scenario._id} 
+                      className="group p-3 sm:p-4 bg-gray-700 rounded-lg hover:bg-gray-650 transition-all duration-200 border border-transparent hover:border-gray-600"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start space-x-3 min-w-0 flex-1">
+                          <div className={`w-2 h-2 ${getStatusColor(scenario.status)} rounded-full mt-2 flex-shrink-0`}></div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-white text-sm sm:text-base mb-1 truncate">
+                              {scenario.name}
+                            </p>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-400">
+                              <div className="flex items-center space-x-1">
+                                <Clock className="w-3 h-3" />
+                                <span>{getRelativeTimeString(scenario.updated_at)}</span>
+                              </div>
+                              <span className="hidden sm:inline">•</span>
+                              <span className="capitalize">
+                                {(scenario.status || 'Draft')}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-3 sm:space-x-4 flex-shrink-0 ml-3">
+                          <div className="text-right">
+                            <span className={`text-xs sm:text-sm font-medium ${getRiskColor(scenario.risk_score || 0)}`}>
+                              {scenario.risk_score ? `${Math.round(scenario.risk_score)}%` : '0%'}
+                            </span>
+                            <p className="text-xs text-gray-500">Risk</p>
+                          </div>
+                          <Link 
+                            to={`/scenarios/${scenario.id || scenario._id}`} 
+                            className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded-lg transition-all duration-200 touch-manipulation"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Link>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-4">
-                      <span className={`text-sm font-medium ${getRiskColor(scenario.risk_score || 0)}`}>
-                        {scenario.risk_score ? `${Math.round(scenario.risk_score)}%` : '0%'} Risk
-                      </span>
-                      <Link to={`/scenarios/${scenario.id || scenario._id}`} className="text-gray-400 hover:text-white transition-colors">
-                        <Eye className="w-4 h-4" />
-                      </Link>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Risk Distribution Section */}
+          <div className="order-2">
+            <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 sm:p-6">
+              <div className="flex items-center space-x-2 mb-4 sm:mb-6">
+                <BarChart3 className="w-5 h-5 text-gray-400" />
+                <h3 className="text-lg font-semibold text-white">Risk Distribution</h3>
+              </div>
+              
+              <div className="space-y-4 sm:space-y-6">
+                {riskDistribution.map((item) => (
+                  <div key={item.name}>
+                    <div className="flex justify-between items-center mb-2 sm:mb-3">
+                      <span className="text-sm sm:text-base text-gray-300 font-medium">{item.name}</span>
+                      <span className="text-sm sm:text-base font-bold text-white">{item.value}%</span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2 sm:h-3 overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full ${item.color} transition-all duration-1000 ease-out`} 
+                        style={{ width: `${item.value}%` }}
+                      ></div>
                     </div>
                   </div>
-                ))
+                ))}
+              </div>
+
+              {events.length === 0 && (
+                <div className="text-center py-4 sm:py-6 mt-6 border-t border-gray-700">
+                  <p className="text-gray-400 text-sm mb-2">Using sample data</p>
+                  <Link 
+                    to="/events" 
+                    className="inline-flex items-center space-x-1 text-blue-400 hover:text-blue-300 text-sm transition-colors touch-manipulation"
+                  >
+                    <span>Add events for real distribution</span>
+                    <ChevronRight className="w-3 h-3" />
+                  </Link>
+                </div>
               )}
             </div>
           </div>
-        </div>
-
-        {/* Risk Distribution */}
-        <div className="card">
-          <div className="flex items-center space-x-2 mb-6">
-            <BarChart3 className="w-5 h-5 text-gray-400" />
-            <h3 className="text-lg font-semibold text-white">Risk Distribution</h3>
-          </div>
-          
-          <div className="space-y-4">
-            {riskDistribution.map((item) => (
-              <div key={item.name}>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-gray-300">{item.name}</span>
-                  <span className="text-sm font-medium text-white">{item.value}%</span>
-                </div>
-                <div className="w-full bg-gray-700 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full ${item.color}`} 
-                    style={{ width: `${item.value}%` }}
-                  ></div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {events.length === 0 && (
-            <div className="text-center py-4 text-gray-400 text-sm">
-              <p>Using sample data</p>
-              <Link to="/events" className="text-blue-400 hover:text-blue-300">
-                Add events for real distribution
-              </Link>
-            </div>
-          )}
         </div>
       </div>
     </div>

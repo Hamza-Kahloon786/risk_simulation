@@ -960,10 +960,10 @@ const ScenarioCanvas = () => {
               <Save className="w-4 h-4" />
               <span className="hidden sm:inline">Save</span>
             </button>
-            <button className="px-3 py-2 sm:px-4 bg-gray-600 hover:bg-gray-700 text-white rounded-lg flex items-center space-x-2" aria-label="Share">
+            {/* <button className="px-3 py-2 sm:px-4 bg-gray-600 hover:bg-gray-700 text-white rounded-lg flex items-center space-x-2" aria-label="Share">
               <Share className="w-4 h-4" />
               <span className="hidden sm:inline">Share</span>
-            </button>
+            </button> */}
             <button 
               onClick={handleRunAnalysis}
               disabled={analysisLoading || riskEvents.length === 0}
@@ -1813,13 +1813,13 @@ const MonteCarloResultsModal = ({ results, scenarioName, onClose }) => {
               <Download className="w-4 h-4" />
               <span>Save Results</span>
             </button>
-            <button 
+            {/* <button 
               onClick={() => shareResultsAsImage(results, scenarioName)}
               className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg flex items-center space-x-2"
             >
               <Share className="w-4 h-4" />
               <span>Share</span>
-            </button>
+            </button> */}
             <button onClick={onClose} className="text-gray-400 hover:text-white p-2">
               <X className="w-5 h-5" />
             </button>
