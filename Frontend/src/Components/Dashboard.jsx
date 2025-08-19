@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
   TrendingUp, 
   Activity, 
@@ -18,91 +18,11 @@ import {
   DollarSign,
   Building
 } from 'lucide-react'
-
-// Theme Context
-const ThemeContext = createContext()
-
-export const useTheme = () => {
-  const context = useContext(ThemeContext)
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider')
-  }
-  return context
-}
-
-// Theme Provider Component
-export const ThemeProvider = ({ children }) => {
-  const [isDarkMode, setIsDarkMode] = useState(true) // Default to dark mode
-
-  // Toggle theme function
-  const toggleTheme = () => {
-    setIsDarkMode(prev => !prev)
-  }
-
-  // Theme classes object
-  const themeClasses = {
-    // Background classes
-    bg: {
-      dashboard: isDarkMode ? 'bg-white' : 'bg-gray-900',
-      card: isDarkMode ? 'bg-gray-50' : 'bg-gray-800',
-      secondary: isDarkMode ? 'bg-gray-100' : 'bg-gray-700',
-      hover: isDarkMode ? 'hover:bg-gray-100' : 'hover:bg-gray-750'
-    },
-    
-    // Text classes
-    text: {
-      primary: isDarkMode ? 'text-gray-900' : 'text-white',
-      secondary: isDarkMode ? 'text-gray-700' : 'text-gray-300',
-      muted: isDarkMode ? 'text-gray-500' : 'text-gray-400',
-      accent: isDarkMode ? 'text-blue-600' : 'text-blue-400'
-    },
-    
-    // Border classes
-    border: {
-      primary: isDarkMode ? 'border-gray-200' : 'border-gray-700',
-      secondary: isDarkMode ? 'border-gray-300' : 'border-gray-600'
-    },
-    
-    // Hover states
-    hover: {
-      bg: isDarkMode ? 'hover:bg-gray-100' : 'hover:bg-gray-750',
-      text: isDarkMode ? 'hover:text-gray-900' : 'hover:text-white'
-    },
-
-    // Input styles
-    input: {
-      base: isDarkMode 
-        ? 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-        : 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
-    },
-
-    // Button styles
-    button: {
-      primary: isDarkMode
-        ? 'bg-blue-600 hover:bg-blue-700 text-white'
-        : 'bg-blue-600 hover:bg-blue-700 text-white',
-      secondary: isDarkMode
-        ? 'bg-white hover:bg-gray-100 text-gray-900 border-gray-300'
-        : 'bg-gray-700 hover:bg-gray-600 text-white border-gray-600'
-    }
-  }
-
-  const value = {
-    isDarkMode,
-    toggleTheme,
-    themeClasses
-  }
-
-  return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
-  )
-}
+import { useTheme } from '../contexts/ThemeContext'
 
 // Theme Toggle Button Component
 const ThemeToggle = () => {
-  const { isDarkMode, toggleTheme, themeClasses } = useTheme()
+  const { isDarkMode, toggleTheme } = useTheme()
 
   return (
     <button
@@ -323,8 +243,17 @@ const Dashboard = () => {
     return num.toString()
   }
 
+  // Default theme classes if themeClasses is undefined
+  const tc = themeClasses || {
+    bg: { dashboard: 'bg-gray-50', card: 'bg-white', secondary: 'bg-gray-100' },
+    text: { primary: 'text-gray-900', secondary: 'text-gray-700', muted: 'text-gray-500', accent: 'text-blue-600' },
+    border: { primary: 'border-gray-200', secondary: 'border-gray-300' },
+    hover: { bg: 'hover:bg-gray-100' },
+    button: { primary: 'bg-blue-600 hover:bg-blue-700 text-white', secondary: 'bg-white hover:bg-gray-100 text-gray-900 border-gray-300' }
+  }
+
   return (
-    <div className={`min-h-screen ${themeClasses.bg.dashboard} transition-colors duration-300`}>
+    <div className={`min-h-screen ${tc.bg.dashboard} transition-colors duration-300`}>
       {/* Container with responsive padding */}
       <div className="px-3 py-4 sm:px-4 sm:py-6 md:px-6 md:py-8 lg:px-8 max-w-[2000px] mx-auto">
         
@@ -333,14 +262,14 @@ const Dashboard = () => {
           <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between sm:justify-start mb-2">
-                <h1 className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold ${themeClasses.text.primary} leading-tight`}>
+                <h1 className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold ${tc.text.primary} leading-tight`}>
                   Risk Simulation Dashboard
                 </h1>
                 <div className="sm:hidden">
                   <ThemeToggle />
                 </div>
               </div>
-              <p className={`text-sm sm:text-base ${themeClasses.text.secondary} mt-1 sm:mt-2`}>
+              <p className={`text-sm sm:text-base ${tc.text.secondary} mt-1 sm:mt-2`}>
                 Monitor your organization's risk posture and scenario outcomes
               </p>
             </div>
@@ -355,7 +284,7 @@ const Dashboard = () => {
                 disabled={loading}
                 className={`
                   flex items-center justify-center space-x-2 px-3 py-2 sm:px-4 rounded-lg transition-colors disabled:opacity-50 touch-manipulation min-h-[44px] text-sm sm:text-base
-                  ${themeClasses.button.secondary}
+                  ${tc.button.secondary}
                 `}
               >
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -363,7 +292,7 @@ const Dashboard = () => {
               </button>
               <button className={`
                 flex items-center justify-center space-x-2 px-3 py-2 sm:px-4 rounded-lg transition-colors touch-manipulation min-h-[44px] text-sm sm:text-base
-                ${themeClasses.button.primary}
+                ${tc.button.primary}
               `}>
                 <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span>New Scenario</span>
@@ -386,11 +315,11 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
           
           {/* Total Risk Score Card */}
-          <div className={`${themeClasses.bg.card} border ${themeClasses.border.primary} rounded-lg p-4 sm:p-6 ${themeClasses.hover.bg} transition-colors`}>
+          <div className={`${tc.bg.card} border ${tc.border.primary} rounded-lg p-4 sm:p-6 ${tc.hover.bg} transition-colors`}>
             <div className="flex items-start justify-between">
               <div className="min-w-0 flex-1">
-                <p className={`${themeClasses.text.muted} text-xs sm:text-sm mb-1 sm:mb-2`}>Total Risk Score</p>
-                <p className={`text-xl sm:text-2xl lg:text-3xl font-bold ${themeClasses.text.primary} mb-1`}>
+                <p className={`${tc.text.muted} text-xs sm:text-sm mb-1 sm:mb-2`}>Total Risk Score</p>
+                <p className={`text-xl sm:text-2xl lg:text-3xl font-bold ${tc.text.primary} mb-1`}>
                   {stats.totalRiskScore}%
                 </p>
                 <div className="flex items-center space-x-1">
@@ -409,15 +338,15 @@ const Dashboard = () => {
           </div>
 
           {/* Active Scenarios Card */}
-          <div className={`${themeClasses.bg.card} border ${themeClasses.border.primary} rounded-lg p-4 sm:p-6 ${themeClasses.hover.bg} transition-colors`}>
+          <div className={`${tc.bg.card} border ${tc.border.primary} rounded-lg p-4 sm:p-6 ${tc.hover.bg} transition-colors`}>
             <div className="flex items-start justify-between">
               <div className="min-w-0 flex-1">
-                <p className={`${themeClasses.text.muted} text-xs sm:text-sm mb-1 sm:mb-2`}>Active Scenarios</p>
-                <p className={`text-xl sm:text-2xl lg:text-3xl font-bold ${themeClasses.text.primary} mb-1`}>
+                <p className={`${tc.text.muted} text-xs sm:text-sm mb-1 sm:mb-2`}>Active Scenarios</p>
+                <p className={`text-xl sm:text-2xl lg:text-3xl font-bold ${tc.text.primary} mb-1`}>
                   {stats.activeScenarios}
                 </p>
                 <div className="flex items-center space-x-1">
-                  <span className={`${themeClasses.text.accent} text-xs sm:text-sm`}>{scenarios.length} total</span>
+                  <span className={`${tc.text.accent} text-xs sm:text-sm`}>{scenarios.length} total</span>
                 </div>
               </div>
               <div className={`w-10 h-10 sm:w-12 sm:h-12 ${isDarkMode ? 'bg-green-500/20' : 'bg-green-100'} rounded-lg flex items-center justify-center flex-shrink-0`}>
@@ -427,11 +356,11 @@ const Dashboard = () => {
           </div>
 
           {/* Critical Events Card */}
-          <div className={`${themeClasses.bg.card} border ${themeClasses.border.primary} rounded-lg p-4 sm:p-6 ${themeClasses.hover.bg} transition-colors`}>
+          <div className={`${tc.bg.card} border ${tc.border.primary} rounded-lg p-4 sm:p-6 ${tc.hover.bg} transition-colors`}>
             <div className="flex items-start justify-between">
               <div className="min-w-0 flex-1">
-                <p className={`${themeClasses.text.muted} text-xs sm:text-sm mb-1 sm:mb-2`}>Critical Events</p>
-                <p className={`text-xl sm:text-2xl lg:text-3xl font-bold ${themeClasses.text.primary} mb-1`}>
+                <p className={`${tc.text.muted} text-xs sm:text-sm mb-1 sm:mb-2`}>Critical Events</p>
+                <p className={`text-xl sm:text-2xl lg:text-3xl font-bold ${tc.text.primary} mb-1`}>
                   {stats.criticalVulnerabilities}
                 </p>
                 <div className="flex items-center space-x-1">
@@ -445,11 +374,11 @@ const Dashboard = () => {
           </div>
 
           {/* Defense Coverage Card */}
-          <div className={`${themeClasses.bg.card} border ${themeClasses.border.primary} rounded-lg p-4 sm:p-6 ${themeClasses.hover.bg} transition-colors`}>
+          <div className={`${tc.bg.card} border ${tc.border.primary} rounded-lg p-4 sm:p-6 ${tc.hover.bg} transition-colors`}>
             <div className="flex items-start justify-between">
               <div className="min-w-0 flex-1">
-                <p className={`${themeClasses.text.muted} text-xs sm:text-sm mb-1 sm:mb-2`}>Defense Coverage</p>
-                <p className={`text-xl sm:text-2xl lg:text-3xl font-bold ${themeClasses.text.primary} mb-1`}>
+                <p className={`${tc.text.muted} text-xs sm:text-sm mb-1 sm:mb-2`}>Defense Coverage</p>
+                <p className={`text-xl sm:text-2xl lg:text-3xl font-bold ${tc.text.primary} mb-1`}>
                   {stats.defenseCoverage}%
                 </p>
                 <div className="flex items-center space-x-1">
@@ -470,10 +399,10 @@ const Dashboard = () => {
           
           {/* Recent Scenarios Section */}
           <div className="xl:col-span-2 order-1">
-            <div className={`${themeClasses.bg.card} border ${themeClasses.border.primary} rounded-lg p-4 sm:p-6`}>
+            <div className={`${tc.bg.card} border ${tc.border.primary} rounded-lg p-4 sm:p-6`}>
               <div className="flex items-center justify-between mb-4 sm:mb-6">
-                <h2 className={`text-lg sm:text-xl font-bold ${themeClasses.text.primary}`}>Recent Scenarios</h2>
-                <button className={`flex items-center space-x-1 ${themeClasses.text.accent} hover:${themeClasses.text.accent}/80 text-sm sm:text-base transition-colors touch-manipulation`}>
+                <h2 className={`text-lg sm:text-xl font-bold ${tc.text.primary}`}>Recent Scenarios</h2>
+                <button className={`flex items-center space-x-1 ${tc.text.accent} hover:${tc.text.accent}/80 text-sm sm:text-base transition-colors touch-manipulation`}>
                   <span>View All ({scenarios.length})</span>
                   <ChevronRight className="w-4 h-4" />
                 </button>
@@ -482,11 +411,11 @@ const Dashboard = () => {
               <div className="space-y-3 sm:space-y-4">
                 {scenarios.length === 0 ? (
                   <div className="text-center py-8 sm:py-12">
-                    <div className={`w-16 h-16 ${themeClasses.bg.secondary} rounded-full flex items-center justify-center mx-auto mb-4`}>
-                      <BarChart3 className={`w-8 h-8 ${themeClasses.text.muted}`} />
+                    <div className={`w-16 h-16 ${tc.bg.secondary} rounded-full flex items-center justify-center mx-auto mb-4`}>
+                      <BarChart3 className={`w-8 h-8 ${tc.text.muted}`} />
                     </div>
-                    <p className={`${themeClasses.text.muted} mb-3`}>No scenarios created yet</p>
-                    <button className={`inline-flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors touch-manipulation ${themeClasses.button.primary}`}>
+                    <p className={`${tc.text.muted} mb-3`}>No scenarios created yet</p>
+                    <button className={`inline-flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors touch-manipulation ${tc.button.primary}`}>
                       <Plus className="w-4 h-4" />
                       <span>Create your first scenario</span>
                     </button>
@@ -495,16 +424,16 @@ const Dashboard = () => {
                   scenarios.slice(0, 5).map((scenario) => (
                     <div 
                       key={scenario.id} 
-                      className={`group p-3 sm:p-4 ${themeClasses.bg.secondary} rounded-lg ${themeClasses.hover.bg} transition-all duration-200 border border-transparent hover:${themeClasses.border.secondary}`}
+                      className={`group p-3 sm:p-4 ${tc.bg.secondary} rounded-lg ${tc.hover.bg} transition-all duration-200 border border-transparent hover:${tc.border.secondary}`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-start space-x-3 min-w-0 flex-1">
                           <div className={`w-2 h-2 ${getStatusColor(scenario.status)} rounded-full mt-2 flex-shrink-0`}></div>
                           <div className="min-w-0 flex-1">
-                            <p className={`font-medium ${themeClasses.text.primary} text-sm sm:text-base mb-1 truncate`}>
+                            <p className={`font-medium ${tc.text.primary} text-sm sm:text-base mb-1 truncate`}>
                               {scenario.name}
                             </p>
-                            <div className={`flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs sm:text-sm ${themeClasses.text.muted}`}>
+                            <div className={`flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs sm:text-sm ${tc.text.muted}`}>
                               <div className="flex items-center space-x-1">
                                 <Clock className="w-3 h-3" />
                                 <span>{getRelativeTimeString(scenario.updated_at)}</span>
@@ -522,9 +451,9 @@ const Dashboard = () => {
                             <span className={`text-xs sm:text-sm font-medium ${getRiskColor(scenario.risk_score || 0)}`}>
                               {scenario.risk_score ? `${Math.round(scenario.risk_score)}%` : '0%'}
                             </span>
-                            <p className={`text-xs ${themeClasses.text.muted}`}>Risk</p>
+                            <p className={`text-xs ${tc.text.muted}`}>Risk</p>
                           </div>
-                          <button className={`p-2 ${themeClasses.text.muted} ${themeClasses.hover.text} ${themeClasses.hover.bg} rounded-lg transition-all duration-200 touch-manipulation`}>
+                          <button className={`p-2 ${tc.text.muted} ${tc.hover.text} ${tc.hover.bg} rounded-lg transition-all duration-200 touch-manipulation`}>
                             <Eye className="w-4 h-4" />
                           </button>
                         </div>
@@ -538,18 +467,18 @@ const Dashboard = () => {
 
           {/* Risk Distribution Section */}
           <div className="order-2">
-            <div className={`${themeClasses.bg.card} border ${themeClasses.border.primary} rounded-lg p-4 sm:p-6`}>
+            <div className={`${tc.bg.card} border ${tc.border.primary} rounded-lg p-4 sm:p-6`}>
               <div className="flex items-center space-x-2 mb-4 sm:mb-6">
-                <BarChart3 className={`w-5 h-5 ${themeClasses.text.muted}`} />
-                <h3 className={`text-lg font-semibold ${themeClasses.text.primary}`}>Risk Distribution</h3>
+                <BarChart3 className={`w-5 h-5 ${tc.text.muted}`} />
+                <h3 className={`text-lg font-semibold ${tc.text.primary}`}>Risk Distribution</h3>
               </div>
               
               <div className="space-y-4 sm:space-y-6">
                 {riskDistribution.map((item) => (
                   <div key={item.name}>
                     <div className="flex justify-between items-center mb-2 sm:mb-3">
-                      <span className={`text-sm sm:text-base ${themeClasses.text.secondary} font-medium`}>{item.name}</span>
-                      <span className={`text-sm sm:text-base font-bold ${themeClasses.text.primary}`}>{item.value}%</span>
+                      <span className={`text-sm sm:text-base ${tc.text.secondary} font-medium`}>{item.name}</span>
+                      <span className={`text-sm sm:text-base font-bold ${tc.text.primary}`}>{item.value}%</span>
                     </div>
                     <div className={`w-full ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'} rounded-full h-2 sm:h-3 overflow-hidden`}>
                       <div 
@@ -561,9 +490,9 @@ const Dashboard = () => {
                 ))}
               </div>
 
-              <div className={`text-center py-4 sm:py-6 mt-6 border-t ${themeClasses.border.primary}`}>
-                <p className={`${themeClasses.text.muted} text-sm mb-2`}>Distribution based on current events</p>
-                <button className={`inline-flex items-center space-x-1 ${themeClasses.text.accent} hover:${themeClasses.text.accent}/80 text-sm transition-colors touch-manipulation`}>
+              <div className={`text-center py-4 sm:py-6 mt-6 border-t ${tc.border.primary}`}>
+                <p className={`${tc.text.muted} text-sm mb-2`}>Distribution based on current events</p>
+                <button className={`inline-flex items-center space-x-1 ${tc.text.accent} hover:${tc.text.accent}/80 text-sm transition-colors touch-manipulation`}>
                   <span>View detailed analysis</span>
                   <ChevronRight className="w-3 h-3" />
                 </button>

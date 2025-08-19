@@ -73,6 +73,15 @@ export const ThemeProvider = ({ children }) => {
     active: {
       bg: isDarkMode ? 'bg-blue-600' : 'bg-blue-500',
       text: 'text-white',
+    },
+    // Button styles
+    button: {
+      primary: isDarkMode
+        ? 'bg-blue-600 hover:bg-blue-700 text-white'
+        : 'bg-blue-600 hover:bg-blue-700 text-white',
+      secondary: isDarkMode
+        ? 'bg-white hover:bg-gray-100 text-gray-900 border-gray-300'
+        : 'bg-gray-700 hover:bg-gray-600 text-white border-gray-600'
     }
   };
 
