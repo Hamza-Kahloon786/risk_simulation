@@ -3,21 +3,20 @@ import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ThemeProvider } from './contexts/ThemeContext'
-import ProtectedRoute from './components/ProtectedRoute'
-
+import ProtectedRoute from './Components/ProtectedRoute'
 // Public Pages
 import Home from './pages/Home'
-import Login from './components/Auth/Login'
-import Register from './components/Auth/Register'
+import Login from './Components/Auth/Login'
+import Register from './Components/Auth/Register'
 
 // Protected Components
-import Sidebar from './components/Sidebar'
-import Dashboard from './components/Dashboard'
-import Scenarios from './components/Scenarios'
-import ScenarioCanvas from './components/ScenarioCanvas/ScenarioCanvas'
-import Locations from './components/Locations'
-import Events from './components/Events'
-import Defenses from './components/Defenses'
+import Sidebar from './Components/Sidebar'
+import Dashboard from './Components/Dashboard'
+import Scenarios from './Components/Scenarios'
+import ScenarioCanvas from './Components/ScenarioCanvas/ScenarioCanvas'
+import Locations from './Components/Locations'
+import Events from './Components/Events'
+import Defenses from './Components/Defenses'
 
 // Component to redirect authenticated users away from auth pages
 const AuthRedirect = ({ children }) => {
