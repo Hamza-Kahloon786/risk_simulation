@@ -1291,20 +1291,29 @@ const ScenarioCanvasReplica = () => {
   return (
     <div className="h-screen bg-gray-900 flex">
       {/* Modals */}
-      <RiskEventModal 
-        isOpen={showRiskModal} 
-        onClose={() => setShowRiskModal(false)} 
-        onSave={addRiskEvent} 
+      <RiskEventModal
+        isOpen={showRiskModal}
+        onClose={() => {
+          setShowRiskModal(false)
+          setDroppedComponent(null) // Clear dropped component if modal is closed without saving
+        }}
+        onSave={addRiskEvent}
       />
-      <BusinessAssetModal 
-        isOpen={showAssetModal} 
-        onClose={() => setShowAssetModal(false)} 
-        onSave={addBusinessAsset} 
+      <BusinessAssetModal
+        isOpen={showAssetModal}
+        onClose={() => {
+          setShowAssetModal(false)
+          setDroppedComponent(null) // Clear dropped component if modal is closed without saving
+        }}
+        onSave={addBusinessAsset}
       />
-      <DefenseSystemModal 
-        isOpen={showDefenseModal} 
-        onClose={() => setShowDefenseModal(false)} 
-        onSave={addDefenseSystem} 
+      <DefenseSystemModal
+        isOpen={showDefenseModal}
+        onClose={() => {
+          setShowDefenseModal(false)
+          setDroppedComponent(null) // Clear dropped component if modal is closed without saving
+        }}
+        onSave={addDefenseSystem}
       />
       <MonteCarloResultsModal
         results={monteCarloResults}
