@@ -1,4 +1,3 @@
-
 // frontend/src/components/ScenarioCanvas/SidebarContent.jsx - UPDATED TO MATCH DESIGN
 import React from 'react'
 import { 
@@ -75,9 +74,19 @@ const SidebarContent = ({
           {riskEventsExpanded && (
             <div className="space-y-3">
               {/* Add Risk Event Buttons */}
-              <button 
+              <div
+                draggable="true"
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('application/json', JSON.stringify({
+                    type: 'risk_event',
+                    subtype: 'cyber_attack',
+                    name: 'Cyber Attack',
+                    description: 'Ransomware, data breaches'
+                  }))
+                  e.dataTransfer.effectAllowed = 'copy'
+                }}
                 onClick={() => setShowRiskEventModal(true)}
-                className="w-full flex items-center space-x-3 p-3 border-2 border-dashed border-red-500 rounded-lg hover:bg-red-500/10 transition-colors group"
+                className="w-full flex items-center space-x-3 p-3 border-2 border-dashed border-red-500 rounded-lg hover:bg-red-500/10 transition-colors group cursor-move"
               >
                 <div className="w-8 h-8 bg-red-500 rounded flex items-center justify-center">
                   <Zap className="w-4 h-4 text-white" />
@@ -86,11 +95,21 @@ const SidebarContent = ({
                   <p className="text-sm font-medium text-white">Add Cyber Attack</p>
                   <p className="text-xs text-gray-400">Ransomware, data breaches</p>
                 </div>
-              </button>
+              </div>
 
-              <button 
+              <div
+                draggable="true"
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('application/json', JSON.stringify({
+                    type: 'risk_event',
+                    subtype: 'supply_disruption',
+                    name: 'Supply Disruption',
+                    description: 'Supplier failures, logistics'
+                  }))
+                  e.dataTransfer.effectAllowed = 'copy'
+                }}
                 onClick={() => setShowRiskEventModal(true)}
-                className="w-full flex items-center space-x-3 p-3 border-2 border-dashed border-orange-500 rounded-lg hover:bg-orange-500/10 transition-colors group"
+                className="w-full flex items-center space-x-3 p-3 border-2 border-dashed border-orange-500 rounded-lg hover:bg-orange-500/10 transition-colors group cursor-move"
               >
                 <div className="w-8 h-8 bg-orange-500 rounded flex items-center justify-center">
                   <Building className="w-4 h-4 text-white" />
@@ -99,11 +118,21 @@ const SidebarContent = ({
                   <p className="text-sm font-medium text-white">Add Supply Disruption</p>
                   <p className="text-xs text-gray-400">Supplier failures, logistics</p>
                 </div>
-              </button>
+              </div>
 
-              <button 
+              <div
+                draggable="true"
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('application/json', JSON.stringify({
+                    type: 'risk_event',
+                    subtype: 'operational_risk',
+                    name: 'Operational Risk',
+                    description: 'Process failures, human errors'
+                  }))
+                  e.dataTransfer.effectAllowed = 'copy'
+                }}
                 onClick={() => setShowRiskEventModal(true)}
-                className="w-full flex items-center space-x-3 p-3 border-2 border-dashed border-yellow-500 rounded-lg hover:bg-yellow-500/10 transition-colors group"
+                className="w-full flex items-center space-x-3 p-3 border-2 border-dashed border-yellow-500 rounded-lg hover:bg-yellow-500/10 transition-colors group cursor-move"
               >
                 <div className="w-8 h-8 bg-yellow-500 rounded flex items-center justify-center">
                   <AlertTriangle className="w-4 h-4 text-white" />
@@ -112,7 +141,7 @@ const SidebarContent = ({
                   <p className="text-sm font-medium text-white">Add Operational Risk</p>
                   <p className="text-xs text-gray-400">Process failures, human errors</p>
                 </div>
-              </button>
+              </div>
 
               {/* Show existing risk events with real data */}
               {riskEvents.map((event) => (
@@ -152,9 +181,19 @@ const SidebarContent = ({
           {businessAssetsExpanded && (
             <div className="space-y-3">
               {/* Add Business Asset Buttons */}
-              <button 
+              <div
+                draggable="true"
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('application/json', JSON.stringify({
+                    type: 'business_asset',
+                    subtype: 'critical_system',
+                    name: 'Critical System',
+                    description: 'IT infrastructure, databases'
+                  }))
+                  e.dataTransfer.effectAllowed = 'copy'
+                }}
                 onClick={() => setShowBusinessAssetModal(true)}
-                className="w-full flex items-center space-x-3 p-3 border-2 border-dashed border-blue-500 rounded-lg hover:bg-blue-500/10 transition-colors group"
+                className="w-full flex items-center space-x-3 p-3 border-2 border-dashed border-blue-500 rounded-lg hover:bg-blue-500/10 transition-colors group cursor-move"
               >
                 <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
                   <Server className="w-4 h-4 text-white" />
@@ -163,11 +202,21 @@ const SidebarContent = ({
                   <p className="text-sm font-medium text-white">Add Critical System</p>
                   <p className="text-xs text-gray-400">IT infrastructure, databases</p>
                 </div>
-              </button>
+              </div>
 
-              <button 
+              <div
+                draggable="true"
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('application/json', JSON.stringify({
+                    type: 'business_asset',
+                    subtype: 'business_location',
+                    name: 'Business Location',
+                    description: 'Offices, plants'
+                  }))
+                  e.dataTransfer.effectAllowed = 'copy'
+                }}
                 onClick={() => setShowBusinessAssetModal(true)}
-                className="w-full flex items-center space-x-3 p-3 border-2 border-dashed border-blue-500 rounded-lg hover:bg-blue-500/10 transition-colors group"
+                className="w-full flex items-center space-x-3 p-3 border-2 border-dashed border-blue-500 rounded-lg hover:bg-blue-500/10 transition-colors group cursor-move"
               >
                 <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
                   <MapPin className="w-4 h-4 text-white" />
@@ -176,11 +225,21 @@ const SidebarContent = ({
                   <p className="text-sm font-medium text-white">Add Business Location</p>
                   <p className="text-xs text-gray-400">Offices, plants</p>
                 </div>
-              </button>
+              </div>
 
-              <button 
+              <div
+                draggable="true"
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('application/json', JSON.stringify({
+                    type: 'business_asset',
+                    subtype: 'data_asset',
+                    name: 'Data Asset',
+                    description: 'Customer data, IP'
+                  }))
+                  e.dataTransfer.effectAllowed = 'copy'
+                }}
                 onClick={() => setShowBusinessAssetModal(true)}
-                className="w-full flex items-center space-x-3 p-3 border-2 border-dashed border-blue-500 rounded-lg hover:bg-blue-500/10 transition-colors group"
+                className="w-full flex items-center space-x-3 p-3 border-2 border-dashed border-blue-500 rounded-lg hover:bg-blue-500/10 transition-colors group cursor-move"
               >
                 <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
                   <Database className="w-4 h-4 text-white" />
@@ -189,11 +248,21 @@ const SidebarContent = ({
                   <p className="text-sm font-medium text-white">Add Data Asset</p>
                   <p className="text-xs text-gray-400">Customer data, IP</p>
                 </div>
-              </button>
+              </div>
 
-              <button 
+              <div
+                draggable="true"
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('application/json', JSON.stringify({
+                    type: 'business_asset',
+                    subtype: 'key_personnel',
+                    name: 'Key Personnel',
+                    description: 'Critical staff, expertise'
+                  }))
+                  e.dataTransfer.effectAllowed = 'copy'
+                }}
                 onClick={() => setShowBusinessAssetModal(true)}
-                className="w-full flex items-center space-x-3 p-3 border-2 border-dashed border-blue-500 rounded-lg hover:bg-blue-500/10 transition-colors group"
+                className="w-full flex items-center space-x-3 p-3 border-2 border-dashed border-blue-500 rounded-lg hover:bg-blue-500/10 transition-colors group cursor-move"
               >
                 <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
                   <Users className="w-4 h-4 text-white" />
@@ -202,7 +271,7 @@ const SidebarContent = ({
                   <p className="text-sm font-medium text-white">Add Key Personnel</p>
                   <p className="text-xs text-gray-400">Critical staff, expertise</p>
                 </div>
-              </button>
+              </div>
 
               {/* Show existing business assets with real data */}
               {businessAssets.map((asset) => (
@@ -240,9 +309,19 @@ const SidebarContent = ({
           {defenseSystemsExpanded && (
             <div className="space-y-3">
               {/* Add Defense System Buttons */}
-              <button 
+              <div
+                draggable="true"
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('application/json', JSON.stringify({
+                    type: 'defense_system',
+                    subtype: 'security_control',
+                    name: 'Security Control',
+                    description: 'Firewalls, monitoring'
+                  }))
+                  e.dataTransfer.effectAllowed = 'copy'
+                }}
                 onClick={() => setShowDefenseSystemModal(true)}
-                className="w-full flex items-center space-x-3 p-3 border-2 border-dashed border-green-500 rounded-lg hover:bg-green-500/10 transition-colors group"
+                className="w-full flex items-center space-x-3 p-3 border-2 border-dashed border-green-500 rounded-lg hover:bg-green-500/10 transition-colors group cursor-move"
               >
                 <div className="w-8 h-8 bg-green-500 rounded flex items-center justify-center">
                   <Shield className="w-4 h-4 text-white" />
@@ -251,11 +330,21 @@ const SidebarContent = ({
                   <p className="text-sm font-medium text-white">Add Security Control</p>
                   <p className="text-xs text-gray-400">Firewalls, monitoring</p>
                 </div>
-              </button>
+              </div>
 
-              <button 
+              <div
+                draggable="true"
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('application/json', JSON.stringify({
+                    type: 'defense_system',
+                    subtype: 'business_continuity',
+                    name: 'Business Continuity',
+                    description: 'DR, redundancy'
+                  }))
+                  e.dataTransfer.effectAllowed = 'copy'
+                }}
                 onClick={() => setShowDefenseSystemModal(true)}
-                className="w-full flex items-center space-x-3 p-3 border-2 border-dashed border-green-500 rounded-lg hover:bg-green-500/10 transition-colors group"
+                className="w-full flex items-center space-x-3 p-3 border-2 border-dashed border-green-500 rounded-lg hover:bg-green-500/10 transition-colors group cursor-move"
               >
                 <div className="w-8 h-8 bg-green-500 rounded flex items-center justify-center">
                   <Activity className="w-4 h-4 text-white" />
@@ -264,7 +353,7 @@ const SidebarContent = ({
                   <p className="text-sm font-medium text-white">Add Business Continuity</p>
                   <p className="text-xs text-gray-400">DR, redundancy</p>
                 </div>
-              </button>
+              </div>
 
               {/* Show existing defense systems with real data */}
               {defenseSystems.map((defense) => (
@@ -329,4 +418,3 @@ const SidebarContent = ({
 }
 
 export default SidebarContent
-      
