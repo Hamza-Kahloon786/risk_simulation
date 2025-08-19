@@ -54,6 +54,41 @@ const Dashboard = () => {
   const [defenses, setDefenses] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+
+  // Default theme classes as fallback
+  const defaultThemeClasses = {
+    bg: {
+      dashboard: 'bg-gray-50',
+      card: 'bg-white',
+      secondary: 'bg-gray-100'
+    },
+    text: {
+      primary: 'text-gray-900',
+      secondary: 'text-gray-700',
+      muted: 'text-gray-500',
+      accent: 'text-blue-600'
+    },
+    border: {
+      primary: 'border-gray-200',
+      secondary: 'border-gray-300'
+    },
+    hover: {
+      bg: 'hover:bg-gray-100'
+    },
+    button: {
+      primary: 'bg-blue-600 hover:bg-blue-700 text-white',
+      secondary: 'bg-white hover:bg-gray-100 text-gray-900 border-gray-300'
+    }
+  }
+
+  // Merge theme classes with defaults
+  const safeThemeClasses = {
+    bg: { ...defaultThemeClasses.bg, ...themeClasses.bg },
+    text: { ...defaultThemeClasses.text, ...themeClasses.text },
+    border: { ...defaultThemeClasses.border, ...themeClasses.border },
+    hover: { ...defaultThemeClasses.hover, ...themeClasses.hover },
+    button: { ...defaultThemeClasses.button, ...themeClasses.button }
+  }
   
   const [stats, setStats] = useState({
     totalRiskScore: 0,
