@@ -1859,9 +1859,19 @@ const ScenarioCanvasReplica = () => {
             </button>
             {sidebarSections.defenseSystems && (
               <div className="space-y-3">
-                <button
+                <div
+                  draggable="true"
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('application/json', JSON.stringify({
+                      type: 'defense_system',
+                      subtype: 'security_control',
+                      name: 'Security Control',
+                      description: 'Firewalls, monitoring'
+                    }))
+                    e.dataTransfer.effectAllowed = 'copy'
+                  }}
                   onClick={() => setShowDefenseModal(true)}
-                  className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600"
+                  className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600 cursor-move"
                 >
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -1872,7 +1882,7 @@ const ScenarioCanvasReplica = () => {
                       <div className="text-xs text-gray-400">Firewalls, monitoring</div>
                     </div>
                   </div>
-                </button>
+                </div>
 
                 <button
                   onClick={() => setShowDefenseModal(true)}
