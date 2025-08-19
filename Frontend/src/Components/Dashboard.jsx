@@ -83,11 +83,11 @@ const Dashboard = () => {
 
   // Merge theme classes with defaults
   const safeThemeClasses = {
-    bg: { ...defaultThemeClasses.bg, ...safeThemeClasses.bg },
-    text: { ...defaultThemeClasses.text, ...safeThemeClasses.text },
-    border: { ...defaultThemeClasses.border, ...safeThemeClasses.border },
-    hover: { ...defaultThemeClasses.hover, ...safeThemeClasses.hover },
-    button: { ...defaultThemeClasses.button, ...safeThemeClasses.button }
+    bg: { ...defaultThemeClasses.bg, ...themeClasses.bg },
+    text: { ...defaultThemeClasses.text, ...themeClasses.text },
+    border: { ...defaultThemeClasses.border, ...themeClasses.border },
+    hover: { ...defaultThemeClasses.hover, ...themeClasses.hover },
+    button: { ...defaultThemeClasses.button, ...themeClasses.button }
   }
   
   const [stats, setStats] = useState({
