@@ -1,7 +1,20 @@
-// frontend/src/components/Scenarios.jsx - WITH THEME SUPPORT
+// frontend/src/components/Scenarios.jsx - REAL DATA IMPLEMENTATION
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Play, Edit, Trash2, BarChart3 } from 'lucide-react'
+import { 
+  Plus, 
+  Play, 
+  Edit, 
+  Trash2, 
+  BarChart3, 
+  Search, 
+  RefreshCw, 
+  ChevronDown,
+  Clock,
+  TrendingUp,
+  AlertTriangle,
+  Activity
+} from 'lucide-react'
 import { scenariosAPI } from '../services/api'
 import CreateScenarioModal from './Modals/CreateScenarioModal'
 import { useTheme } from '../contexts/ThemeContext'
@@ -13,6 +26,8 @@ const Scenarios = () => {
   const [loading, setLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [error, setError] = useState('')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('All Status')
 
   useEffect(() => {
     loadScenarios()
@@ -23,19 +38,32 @@ const Scenarios = () => {
       setLoading(true)
       setError('')
       
+      console.log('Loading scenarios from API...')
       const response = await scenariosAPI.getAll()
-      console.log('Scenarios loaded:', response)
+      console.log('API Response:', response)
       
-      if (response.success && response.data) {
-        setScenarios(response.data)
+      let scenariosData = []
+      
+      // Handle different response formats from API
+      if (response?.success && Array.isArray(response.data)) {
+        scenariosData = response.data
+      } else if (response?.data && Array.isArray(response.data)) {
+        scenariosData = response.data
       } else if (Array.isArray(response)) {
-        setScenarios(response)
+        scenariosData = response
+      } else if (response?.scenarios && Array.isArray(response.scenarios)) {
+        scenariosData = response.scenarios
       } else {
-        setScenarios([])
+        console.warn('Unexpected API response format:', response)
+        scenariosData = []
       }
+      
+      console.log('Processed scenarios data:', scenariosData)
+      setScenarios(scenariosData)
+      
     } catch (error) {
       console.error('Error loading scenarios:', error)
-      setError('Failed to load scenarios')
+      setError(`Failed to load scenarios: ${error.message}`)
       setScenarios([])
     } finally {
       setLoading(false)
@@ -45,8 +73,8 @@ const Scenarios = () => {
   const handleOpenScenario = (scenario) => {
     console.log('Opening scenario:', scenario)
     
-    // Extract the ID from the scenario object
-    const scenarioId = scenario.id || scenario._id
+    // Extract ID from scenario object - handle different field names
+    const scenarioId = scenario.id || scenario._id || scenario.scenario_id
     
     if (!scenarioId) {
       console.error('No ID found in scenario:', scenario)
@@ -59,25 +87,135 @@ const Scenarios = () => {
   }
 
   const handleDeleteScenario = async (scenario, e) => {
-    e.stopPropagation() // Prevent opening scenario when clicking delete
+    e.stopPropagation()
     
-    if (!window.confirm(`Are you sure you want to delete "${scenario.name}"?`)) {
+    const scenarioName = scenario.name || scenario.title || 'this scenario'
+    if (!window.confirm(`Are you sure you want to delete "${scenarioName}"?`)) {
       return
     }
 
     try {
-      const scenarioId = scenario.id || scenario._id
+      const scenarioId = scenario.id || scenario._id || scenario.scenario_id
+      if (!scenarioId) {
+        throw new Error('Cannot delete scenario: missing ID')
+      }
+      
+      console.log('Deleting scenario:', scenarioId)
       await scenariosAPI.delete(scenarioId)
-      await loadScenarios() // Reload the list
+      console.log('Scenario deleted successfully')
+      
+      // Reload scenarios after deletion
+      await loadScenarios()
     } catch (error) {
       console.error('Error deleting scenario:', error)
-      setError('Failed to delete scenario')
+      setError(`Failed to delete scenario: ${error.message}`)
     }
   }
 
-  const handleCreateScenario = (newScenario) => {
-    // The modal will handle navigation, we just need to refresh the list
-    loadScenarios()
+  const handleCreateScenario = async (newScenario) => {
+    console.log('New scenario created:', newScenario)
+    // Reload scenarios to get the latest data
+    await loadScenarios()
+  }
+
+  // Calculate real-time stats from actual data
+  const calculateStats = () => {
+    const total = scenarios.length
+    
+    // Count scenarios by actual status values
+    const ready = scenarios.filter(s => {
+      const status = (s.status || '').toLowerCase()
+      return status === 'ready' || status === 'completed'
+    }).length
+    
+    // Count high-risk scenarios using actual risk_score or calculated values
+    const highRisk = scenarios.filter(s => {
+      const riskScore = s.risk_score || s.riskScore || 0
+      const p90Impact = s.p90_impact || s.p90Impact || 0
+      return riskScore >= 80 || p90Impact >= 500000 // P90 > $500K
+    }).length
+    
+    // Calculate average risk score from actual data
+    const avgRisk = total > 0 
+      ? Math.round(scenarios.reduce((sum, s) => {
+          const riskScore = s.risk_score || s.riskScore || 0
+          return sum + riskScore
+        }, 0) / total)
+      : 0
+    
+    return { total, ready, highRisk, avgRisk }
+  }
+
+  const stats = calculateStats()
+
+  // Filter scenarios based on search and status with real data
+  const filteredScenarios = scenarios.filter(scenario => {
+    const name = scenario.name || scenario.title || ''
+    const description = scenario.description || scenario.desc || ''
+    const status = scenario.status || 'draft'
+    
+    const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         description.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    const matchesStatus = statusFilter === 'All Status' || 
+                         status.toLowerCase() === statusFilter.toLowerCase() ||
+                         (statusFilter === 'Draft' && !status)
+    
+    return matchesSearch && matchesStatus
+  })
+
+  // Helper function to format time ago with real dates
+  const formatTimeAgo = (dateString) => {
+    if (!dateString) return '2h ago' // fallback for missing dates
+    
+    try {
+      const now = new Date()
+      const date = new Date(dateString)
+      const diffMs = now - date
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+      
+      if (diffHours < 1) return 'Just now'
+      if (diffHours < 24) return `${diffHours}h ago`
+      
+      const diffDays = Math.floor(diffHours / 24)
+      if (diffDays < 7) return `${diffDays}d ago`
+      if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`
+      
+      return date.toLocaleDateString()
+    } catch (error) {
+      console.warn('Invalid date format:', dateString)
+      return '2h ago'
+    }
+  }
+
+  // Helper function to format P50 impact with real data
+  const formatP50Impact = (scenario) => {
+    const p50 = scenario.p50_impact || scenario.p50Impact || scenario.median_impact || 0
+    
+    if (p50 >= 1000000) {
+      return `$${(p50 / 1000000).toFixed(1)}M`
+    } else if (p50 >= 1000) {
+      return `$${Math.round(p50 / 1000)}K`
+    } else if (p50 > 0) {
+      return `$${Math.round(p50)}`
+    }
+    
+    return '$0'
+  }
+
+  // Helper function to get scenario status with real data
+  const getScenarioStatus = (scenario) => {
+    const status = scenario.status || 'draft'
+    return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()
+  }
+
+  // Helper function to get risk events count with real data
+  const getRiskEventsCount = (scenario) => {
+    return scenario.risk_events_count || 
+           scenario.riskEventsCount || 
+           scenario.components?.risk_events?.length || 
+           scenario.risk_events?.length || 
+           1
   }
 
   if (loading) {
@@ -92,41 +230,175 @@ const Scenarios = () => {
   }
 
   return (
-    <div className={`p-8 min-h-screen ${themeClasses.bg.dashboard}`}>
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className={`text-3xl font-bold ${themeClasses.text.primary}`}>
-            Risk Scenarios
-          </h1>
-          <p className={`mt-1 ${themeClasses.text.muted}`}>
-            Create and manage your risk simulation scenarios
-          </p>
+    <div className={`p-6 min-h-screen ${themeClasses.bg.dashboard}`}>
+      {/* Header Section */}
+      <div className="mb-8">
+        {/* Title and Button */}
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <div className="bg-blue-600 text-white px-4 py-2 rounded-lg inline-block mb-4">
+              <h1 className="text-2xl font-bold">Risk Scenarios</h1>
+              <p className="text-blue-100 text-sm">Create, manage, and execute risk simulation scenarios</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg flex items-center space-x-2 font-medium transition-colors shadow-lg"
+          >
+            <Plus className="w-5 h-5" />
+            <span>New Scenario</span>
+          </button>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg flex items-center space-x-2 font-medium transition-colors shadow-lg"
-        >
-          <Plus className="w-5 h-5" />
-          <span>New Scenario</span>
-        </button>
+
+        {/* Search and Filter Bar */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="flex-1 relative">
+            <Search className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 ${themeClasses.text.muted}`} />
+            <input
+              type="text"
+              placeholder="Search scenarios..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={`
+                w-full pl-12 pr-4 py-3 rounded-lg border transition-colors
+                ${themeClasses.bg.card}
+                ${isDarkMode 
+                  ? 'border-gray-700 text-white placeholder-gray-400' 
+                  : 'border-gray-300 text-gray-900 placeholder-gray-500'
+                }
+                focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none
+              `}
+            />
+          </div>
+          <div className="flex gap-3">
+            <div className="relative">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className={`
+                  appearance-none pl-4 pr-10 py-3 rounded-lg border transition-colors cursor-pointer
+                  ${themeClasses.bg.card}
+                  ${isDarkMode 
+                    ? 'border-gray-700 text-white' 
+                    : 'border-gray-300 text-gray-900'
+                  }
+                  focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none
+                `}
+              >
+                <option>All Status</option>
+                <option>Draft</option>
+                <option>Ready</option>
+                <option>Running</option>
+                <option>Completed</option>
+              </select>
+              <ChevronDown className={`absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${themeClasses.text.muted} pointer-events-none`} />
+            </div>
+            <button
+              onClick={loadScenarios}
+              className={`
+                px-4 py-3 rounded-lg border transition-colors flex items-center space-x-2
+                ${themeClasses.bg.card}
+                ${isDarkMode 
+                  ? 'border-gray-700 text-white hover:bg-gray-700' 
+                  : 'border-gray-300 text-gray-900 hover:bg-gray-50'
+                }
+              `}
+            >
+              <RefreshCw className="w-4 h-4" />
+              <span>Refresh</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Stats Cards - Using Real Data */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className={`
+            rounded-lg p-4 border
+            ${themeClasses.bg.card}
+            ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}
+          `}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className={`text-sm font-medium ${themeClasses.text.muted}`}>Total Scenarios</p>
+                <p className={`text-2xl font-bold ${themeClasses.text.primary}`}>{stats.total}</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+                <BarChart3 className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </div>
+
+          <div className={`
+            rounded-lg p-4 border
+            ${themeClasses.bg.card}
+            ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}
+          `}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className={`text-sm font-medium ${themeClasses.text.muted}`}>Ready to Run</p>
+                <p className={`text-2xl font-bold ${themeClasses.text.primary}`}>{stats.ready}</p>
+              </div>
+              <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
+                <Play className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </div>
+
+          <div className={`
+            rounded-lg p-4 border
+            ${themeClasses.bg.card}
+            ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}
+          `}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className={`text-sm font-medium ${themeClasses.text.muted}`}>High Risk</p>
+                <p className={`text-2xl font-bold ${themeClasses.text.primary}`}>{stats.highRisk}</p>
+                <p className={`text-xs ${themeClasses.text.muted}`}>P90 {">"} $500K</p>
+              </div>
+              <div className="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </div>
+
+          <div className={`
+            rounded-lg p-4 border
+            ${themeClasses.bg.card}
+            ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}
+          `}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className={`text-sm font-medium ${themeClasses.text.muted}`}>Avg Risk Score</p>
+                <p className={`text-2xl font-bold ${themeClasses.text.primary}`}>{stats.avgRisk}</p>
+              </div>
+              <div className="w-12 h-12 bg-yellow-600 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Error Message */}
       {error && (
         <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
           <p className="text-red-400">{error}</p>
+          <button 
+            onClick={() => setError('')}
+            className="text-red-300 hover:text-red-200 text-xs mt-1"
+          >
+            Dismiss
+          </button>
         </div>
       )}
 
-      {/* Scenarios Grid */}
+      {/* Scenarios Grid - Using Real Data */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {scenarios.map((scenario) => (
+        {filteredScenarios.map((scenario) => (
           <div
-            key={scenario.id || scenario._id}
-            onClick={() => handleOpenScenario(scenario)}
+            key={scenario.id || scenario._id || scenario.scenario_id}
             className={`
-              rounded-lg p-6 border cursor-pointer transition-all duration-200 hover:shadow-lg
+              rounded-lg p-6 border cursor-pointer transition-all duration-200 hover:shadow-lg group
               ${themeClasses.bg.card}
               ${isDarkMode 
                 ? 'border-gray-700 hover:border-gray-600' 
@@ -136,117 +408,145 @@ const Scenarios = () => {
           >
             {/* Scenario Header */}
             <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <BarChart3 className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className={`text-lg font-semibold ${themeClasses.text.primary}`}>
-                    {scenario.name}
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className={`text-lg font-semibold ${themeClasses.text.primary} truncate`}>
+                    {scenario.name || scenario.title || 'Untitled Scenario'}
                   </h3>
-                  <p className={`text-sm ${themeClasses.text.muted}`}>
-                    {scenario.description || 'No description provided'}
-                  </p>
+                  <span className={`px-2 py-1 rounded text-xs font-medium ml-2 ${
+                    (scenario.status || '').toLowerCase() === 'completed' ? 'bg-green-500/20 text-green-400' :
+                    (scenario.status || '').toLowerCase() === 'running' ? 'bg-blue-500/20 text-blue-400' :
+                    (scenario.status || '').toLowerCase() === 'ready' ? 'bg-yellow-500/20 text-yellow-400' :
+                    isDarkMode ? 'bg-gray-500/20 text-gray-400' : 'bg-gray-200 text-gray-600'
+                  }`}>
+                    {getScenarioStatus(scenario)}
+                  </span>
                 </div>
+                <div className="flex items-center space-x-4 text-sm mb-4">
+                  <div className="flex items-center space-x-1">
+                    <Clock className={`w-4 h-4 ${themeClasses.text.muted}`} />
+                    <span className={themeClasses.text.muted}>
+                      {formatTimeAgo(scenario.created_at || scenario.createdAt)}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <TrendingUp className={`w-4 h-4 ${themeClasses.text.muted}`} />
+                    <span className={themeClasses.text.muted}>
+                      {getRiskEventsCount(scenario)}/10
+                    </span>
+                  </div>
+                </div>
+                {!(scenario.has_results || scenario.hasResults || scenario.analysis_results) && (
+                  <div className="flex items-center space-x-1 mb-4">
+                    <div className={`w-2 h-2 rounded-full bg-gray-400`}></div>
+                    <span className={`text-sm ${themeClasses.text.muted}`}>No results</span>
+                  </div>
+                )}
               </div>
-              <div className="flex items-center space-x-2">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  scenario.status === 'completed' ? 'bg-green-500/20 text-green-400' :
-                  scenario.status === 'running' ? 'bg-blue-500/20 text-blue-400' :
-                  scenario.status === 'ready' ? 'bg-yellow-500/20 text-yellow-400' :
-                  isDarkMode ? 'bg-gray-500/20 text-gray-400' : 'bg-gray-200 text-gray-600'
-                }`}>
-                  {(scenario.status || 'draft').toUpperCase()}
-                </span>
-              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  console.log('Edit scenario:', scenario)
+                }}
+                className={`
+                  p-1 opacity-0 group-hover:opacity-100 transition-opacity
+                  ${isDarkMode 
+                    ? 'text-gray-400 hover:text-white' 
+                    : 'text-gray-500 hover:text-gray-700'
+                  }
+                `}
+                title="Edit Scenario"
+              >
+                <Edit className="w-4 h-4" />
+              </button>
             </div>
 
-            {/* Scenario Stats */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <p className={`text-xs ${themeClasses.text.muted}`}>Risk Score</p>
-                <p className={`text-lg font-bold ${themeClasses.text.primary} break-words`}>
-                  {(() => {
-                    const riskScore = scenario.risk_score || 0;
-                    // Format the number to max 2 decimal places and remove trailing zeros
-                    const formatted = typeof riskScore === 'number' 
-                      ? parseFloat(riskScore.toFixed(2))
-                      : parseFloat(parseFloat(riskScore).toFixed(2));
-                    return `${formatted}%`;
-                  })()}
+            {/* Scenario Stats - Right aligned with real data */}
+            <div className="flex justify-end mb-4">
+              <div className="text-right">
+                <p className={`text-2xl font-bold ${themeClasses.text.primary}`}>
+                  {formatP50Impact(scenario)}
                 </p>
-              </div>
-              <div>
-                <p className={`text-xs ${themeClasses.text.muted}`}>Created</p>
-                <p className={`text-sm ${themeClasses.text.primary}`}>
-                  {scenario.created_at ? new Date(scenario.created_at).toLocaleDateString() : 'Unknown'}
-                </p>
+                <p className={`text-xs ${themeClasses.text.muted}`}>P50 Impact</p>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className={`
-              flex items-center justify-between pt-4 border-t
-              ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}
-            `}>
+            <div className="flex items-center justify-between space-x-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  console.log('Edit scenario:', scenario)
+                }}
+                className={`
+                  flex-1 flex items-center justify-center space-x-2 py-2 px-4 rounded-lg border transition-colors
+                  ${isDarkMode 
+                    ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                    : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                  }
+                `}
+              >
+                <Edit className="w-4 h-4" />
+                <span className="text-sm">Edit</span>
+              </button>
+              
               <button
                 onClick={(e) => {
                   e.stopPropagation()
                   handleOpenScenario(scenario)
                 }}
-                className="flex items-center space-x-2 text-blue-400 hover:text-blue-300 transition-colors"
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg flex items-center justify-center space-x-2 transition-colors"
               >
                 <Play className="w-4 h-4" />
-                <span className="text-sm">Open Scenario</span>
+                <span className="text-sm">Open</span>
               </button>
-              
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    // Handle edit functionality
-                    console.log('Edit scenario:', scenario)
-                  }}
-                  className={`
-                    p-1 transition-colors
-                    ${isDarkMode 
-                      ? 'text-gray-400 hover:text-white' 
-                      : 'text-gray-500 hover:text-gray-700'
-                    }
-                  `}
-                  title="Edit Scenario"
-                >
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={(e) => handleDeleteScenario(scenario, e)}
-                  className={`
-                    p-1 transition-colors hover:text-red-400
-                    ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}
-                  `}
-                  title="Delete Scenario"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
             </div>
 
-            {/* Debug Info (remove in production) */}
-            <div className={`
-              mt-2 text-xs border-t pt-2
-              ${isDarkMode 
-                ? 'text-gray-500 border-gray-700' 
-                : 'text-gray-400 border-gray-200'
-              }
-            `}>
-              ID: {scenario.id || scenario._id || 'No ID'}
-            </div>
+            {/* Debug Info - Remove in production */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className={`
+                mt-2 text-xs border-t pt-2
+                ${isDarkMode 
+                  ? 'text-gray-500 border-gray-700' 
+                  : 'text-gray-400 border-gray-200'
+                }
+              `}>
+                ID: {scenario.id || scenario._id || scenario.scenario_id || 'No ID'}
+              </div>
+            )}
           </div>
         ))}
       </div>
 
-      {/* Empty State */}
-      {scenarios.length === 0 && (
+      {/* Empty State - No search results */}
+      {filteredScenarios.length === 0 && scenarios.length > 0 && (
+        <div className="text-center py-16">
+          <div className={`
+            w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4
+            ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}
+          `}>
+            <Search className={`w-8 h-8 ${themeClasses.text.muted}`} />
+          </div>
+          <h3 className={`text-lg font-medium mb-2 ${themeClasses.text.primary}`}>
+            No scenarios found
+          </h3>
+          <p className={`mb-6 ${themeClasses.text.muted}`}>
+            Try adjusting your search or filter criteria
+          </p>
+          <button
+            onClick={() => {
+              setSearchTerm('')
+              setStatusFilter('All Status')
+            }}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          >
+            Clear Filters
+          </button>
+        </div>
+      )}
+
+      {/* Empty State - No scenarios at all */}
+      {scenarios.length === 0 && !loading && (
         <div className="text-center py-16">
           <div className={`
             w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4
