@@ -1488,8 +1488,16 @@ const ScenarioCanvasReplica = () => {
               }
             }}
           >
+            {/* Drop zone hint */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200 z-10 drop-hint">
+              <div className="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg">
+                <p className="text-lg font-medium">Drop here to add component</p>
+                <p className="text-sm opacity-75">Component settings will open automatically</p>
+              </div>
+            </div>
+
             {/* Canvas for connections */}
-            <canvas 
+            <canvas
               ref={canvasRef}
               className="absolute inset-0 w-full h-full pointer-events-none"
               style={{ width: '100%', height: '100%' }}
