@@ -1054,7 +1054,8 @@ const ScenarioCanvasReplica = () => {
   const [showDefenseModal, setShowDefenseModal] = useState(false);
   const [showMonteCarloModal, setShowMonteCarloModal] = useState(false);
   const [monteCarloResults, setMonteCarloResults] = useState(null);
-  
+  const [droppedComponent, setDroppedComponent] = useState(null);
+
   const canvasRef = useRef(null);
 
   // Draw connections
@@ -1102,48 +1103,57 @@ const ScenarioCanvasReplica = () => {
   }, [components, connections]);
 
   const addRiskEvent = (data) => {
+    const position = droppedComponent?.position || {
+      x: 200 + Math.random() * 400,
+      y: 150 + Math.random() * 200
+    };
+
     const newComponent = {
       id: `risk-${Date.now()}`,
       type: 'risk',
       name: data.name,
-      position: { 
-        x: 200 + Math.random() * 400, 
-        y: 150 + Math.random() * 200 
-      },
+      position,
       color: getComponentColor('risk'),
       data
     };
     setComponents(prev => [...prev, newComponent]);
+    setDroppedComponent(null); // Clear the dropped component data
   };
 
   const addBusinessAsset = (data) => {
+    const position = droppedComponent?.position || {
+      x: 200 + Math.random() * 400,
+      y: 250 + Math.random() * 200
+    };
+
     const newComponent = {
       id: `asset-${Date.now()}`,
       type: 'asset',
       name: data.name,
-      position: { 
-        x: 200 + Math.random() * 400, 
-        y: 250 + Math.random() * 200 
-      },
+      position,
       color: getComponentColor('asset'),
       data
     };
     setComponents(prev => [...prev, newComponent]);
+    setDroppedComponent(null); // Clear the dropped component data
   };
 
   const addDefenseSystem = (data) => {
+    const position = droppedComponent?.position || {
+      x: 200 + Math.random() * 400,
+      y: 300 + Math.random() * 150
+    };
+
     const newComponent = {
       id: `defense-${Date.now()}`,
       type: 'defense',
       name: data.name,
-      position: { 
-        x: 200 + Math.random() * 400, 
-        y: 300 + Math.random() * 150 
-      },
+      position,
       color: getComponentColor('defense'),
       data
     };
     setComponents(prev => [...prev, newComponent]);
+    setDroppedComponent(null); // Clear the dropped component data
   };
 
   const deleteComponent = (componentId) => {
@@ -1281,20 +1291,29 @@ const ScenarioCanvasReplica = () => {
   return (
     <div className="h-screen bg-gray-900 flex">
       {/* Modals */}
-      <RiskEventModal 
-        isOpen={showRiskModal} 
-        onClose={() => setShowRiskModal(false)} 
-        onSave={addRiskEvent} 
+      <RiskEventModal
+        isOpen={showRiskModal}
+        onClose={() => {
+          setShowRiskModal(false)
+          setDroppedComponent(null) // Clear dropped component if modal is closed without saving
+        }}
+        onSave={addRiskEvent}
       />
-      <BusinessAssetModal 
-        isOpen={showAssetModal} 
-        onClose={() => setShowAssetModal(false)} 
-        onSave={addBusinessAsset} 
+      <BusinessAssetModal
+        isOpen={showAssetModal}
+        onClose={() => {
+          setShowAssetModal(false)
+          setDroppedComponent(null) // Clear dropped component if modal is closed without saving
+        }}
+        onSave={addBusinessAsset}
       />
-      <DefenseSystemModal 
-        isOpen={showDefenseModal} 
-        onClose={() => setShowDefenseModal(false)} 
-        onSave={addDefenseSystem} 
+      <DefenseSystemModal
+        isOpen={showDefenseModal}
+        onClose={() => {
+          setShowDefenseModal(false)
+          setDroppedComponent(null) // Clear dropped component if modal is closed without saving
+        }}
+        onSave={addDefenseSystem}
       />
       <MonteCarloResultsModal
         results={monteCarloResults}
@@ -1435,9 +1454,65 @@ const ScenarioCanvasReplica = () => {
           </div>
 
           {/* Canvas Area */}
-          <div className="bg-gray-800 rounded-lg flex-1 relative overflow-hidden min-h-[500px]">
+          <div
+            className="bg-gray-800 rounded-lg flex-1 relative overflow-hidden min-h-[500px] border-2 border-dashed border-transparent transition-colors"
+            onDragOver={(e) => {
+              e.preventDefault()
+              e.currentTarget.classList.add('border-blue-400', 'bg-blue-500/10')
+              const dropHint = e.currentTarget.querySelector('.drop-hint')
+              if (dropHint) dropHint.style.opacity = '1'
+            }}
+            onDragLeave={(e) => {
+              e.preventDefault()
+              e.currentTarget.classList.remove('border-blue-400', 'bg-blue-500/10')
+              const dropHint = e.currentTarget.querySelector('.drop-hint')
+              if (dropHint) dropHint.style.opacity = '0'
+            }}
+            onDrop={(e) => {
+              e.preventDefault()
+              e.currentTarget.classList.remove('border-blue-400', 'bg-blue-500/10')
+              const dropHint = e.currentTarget.querySelector('.drop-hint')
+              if (dropHint) dropHint.style.opacity = '0'
+
+              try {
+                const data = JSON.parse(e.dataTransfer.getData('application/json'))
+                const rect = e.currentTarget.getBoundingClientRect()
+                const x = e.clientX - rect.left
+                const y = e.clientY - rect.top
+
+                // Create a temporary component for the dropped item
+                const tempComponent = {
+                  ...data,
+                  id: `temp-${Date.now()}`,
+                  position: { x, y }
+                }
+
+                // Store the drop position and component data
+                setDroppedComponent(tempComponent)
+
+                // Open the appropriate modal based on the type
+                if (data.type === 'risk_event') {
+                  setShowRiskModal(true)
+                } else if (data.type === 'business_asset') {
+                  setShowAssetModal(true)
+                } else if (data.type === 'defense_system') {
+                  setShowDefenseModal(true)
+                }
+              } catch (error) {
+                console.error('Error parsing dropped data:', error)
+              }
+            }}
+          >
+            {/* Drop zone hint */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200 z-10 drop-hint">
+              <div className="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg">
+                <p className="text-lg font-medium">Drop here to add component</p>
+                <p className="text-sm opacity-75">Component settings will open automatically</p>
+              </div>
+            </div>
+
             {/* Canvas for connections */}
-            <canvas 
+            <canvas
               ref={canvasRef}
               className="absolute inset-0 w-full h-full pointer-events-none"
               style={{ width: '100%', height: '100%' }}
@@ -1583,9 +1658,19 @@ const ScenarioCanvasReplica = () => {
             </button>
             {sidebarSections.riskEvents && (
               <div className="space-y-3">
-                <button
+                <div
+                  draggable="true"
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('application/json', JSON.stringify({
+                      type: 'risk_event',
+                      subtype: 'cyber_attack',
+                      name: 'Cyber Attack',
+                      description: 'Ransomware, data breaches'
+                    }))
+                    e.dataTransfer.effectAllowed = 'copy'
+                  }}
                   onClick={() => setShowRiskModal(true)}
-                  className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600"
+                  className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600 cursor-move"
                 >
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -1596,11 +1681,21 @@ const ScenarioCanvasReplica = () => {
                       <div className="text-xs text-gray-400">Ransomware, data breaches</div>
                     </div>
                   </div>
-                </button>
+                </div>
 
-                <button
+                <div
+                  draggable="true"
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('application/json', JSON.stringify({
+                      type: 'risk_event',
+                      subtype: 'supply_disruption',
+                      name: 'Supply Disruption',
+                      description: 'Supplier failures, logistics'
+                    }))
+                    e.dataTransfer.effectAllowed = 'copy'
+                  }}
                   onClick={() => setShowRiskModal(true)}
-                  className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600"
+                  className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600 cursor-move"
                 >
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -1611,7 +1706,7 @@ const ScenarioCanvasReplica = () => {
                       <div className="text-xs text-gray-400">Supplier failures, logistics</div>
                     </div>
                   </div>
-                </button>
+                </div>
 
                 <button
                   onClick={() => setShowRiskModal(true)}
@@ -1657,9 +1752,19 @@ const ScenarioCanvasReplica = () => {
             </button>
             {sidebarSections.businessAssets && (
               <div className="space-y-3">
-  <button
+  <div
+    draggable="true"
+    onDragStart={(e) => {
+      e.dataTransfer.setData('application/json', JSON.stringify({
+        type: 'business_asset',
+        subtype: 'critical_system',
+        name: 'Critical System',
+        description: 'IT infrastructure, databases'
+      }))
+      e.dataTransfer.effectAllowed = 'copy'
+    }}
     onClick={() => setShowAssetModal(true)}
-    className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600"
+    className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600 cursor-move"
   >
     <div className="flex items-center space-x-3">
       <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -1670,7 +1775,7 @@ const ScenarioCanvasReplica = () => {
         <div className="text-xs text-gray-400">IT infrastructure, databases</div>
       </div>
     </div>
-  </button>
+  </div>
 
   <button
     onClick={() => setShowAssetModal(true)}
@@ -1763,9 +1868,19 @@ const ScenarioCanvasReplica = () => {
             </button>
             {sidebarSections.defenseSystems && (
               <div className="space-y-3">
-                <button
+                <div
+                  draggable="true"
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('application/json', JSON.stringify({
+                      type: 'defense_system',
+                      subtype: 'security_control',
+                      name: 'Security Control',
+                      description: 'Firewalls, monitoring'
+                    }))
+                    e.dataTransfer.effectAllowed = 'copy'
+                  }}
                   onClick={() => setShowDefenseModal(true)}
-                  className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600"
+                  className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600 cursor-move"
                 >
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -1776,7 +1891,7 @@ const ScenarioCanvasReplica = () => {
                       <div className="text-xs text-gray-400">Firewalls, monitoring</div>
                     </div>
                   </div>
-                </button>
+                </div>
 
                 <button
                   onClick={() => setShowDefenseModal(true)}
