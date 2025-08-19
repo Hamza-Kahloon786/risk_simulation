@@ -279,7 +279,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className={`min-h-screen ${themeClasses.bg.dashboard} transition-colors duration-300`}>
+    <div className={`min-h-screen ${safeThemeClasses.bg.dashboard} transition-colors duration-300`}>
       {/* Container with responsive padding */}
       <div className="px-3 py-4 sm:px-4 sm:py-6 md:px-6 md:py-8 lg:px-8 max-w-[2000px] mx-auto">
         
