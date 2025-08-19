@@ -22,15 +22,15 @@ import { useTheme } from '../contexts/ThemeContext'
 
 // Theme Toggle Button Component
 const ThemeToggle = () => {
-  const { isDarkMode, toggleTheme, themeClasses } = useTheme()
+  const { isDarkMode, toggleTheme } = useTheme()
 
   return (
     <button
       onClick={toggleTheme}
       className={`
         p-2 rounded-lg transition-all duration-200 hover:scale-105
-        ${isDarkMode 
-          ? 'bg-gray-700 hover:bg-gray-600 text-yellow-400' 
+        ${isDarkMode
+          ? 'bg-gray-700 hover:bg-gray-600 text-yellow-400'
           : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
         }
       `}
