@@ -1743,9 +1743,19 @@ const ScenarioCanvasReplica = () => {
             </button>
             {sidebarSections.businessAssets && (
               <div className="space-y-3">
-  <button
+  <div
+    draggable="true"
+    onDragStart={(e) => {
+      e.dataTransfer.setData('application/json', JSON.stringify({
+        type: 'business_asset',
+        subtype: 'critical_system',
+        name: 'Critical System',
+        description: 'IT infrastructure, databases'
+      }))
+      e.dataTransfer.effectAllowed = 'copy'
+    }}
     onClick={() => setShowAssetModal(true)}
-    className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600"
+    className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600 cursor-move"
   >
     <div className="flex items-center space-x-3">
       <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -1756,7 +1766,7 @@ const ScenarioCanvasReplica = () => {
         <div className="text-xs text-gray-400">IT infrastructure, databases</div>
       </div>
     </div>
-  </button>
+  </div>
 
   <button
     onClick={() => setShowAssetModal(true)}
