@@ -1436,7 +1436,49 @@ const ScenarioCanvasReplica = () => {
           </div>
 
           {/* Canvas Area */}
-          <div className="bg-gray-800 rounded-lg flex-1 relative overflow-hidden min-h-[500px]">
+          <div
+            className="bg-gray-800 rounded-lg flex-1 relative overflow-hidden min-h-[500px] border-2 border-dashed border-transparent transition-colors"
+            onDragOver={(e) => {
+              e.preventDefault()
+              e.currentTarget.classList.add('border-blue-400', 'bg-blue-500/10')
+            }}
+            onDragLeave={(e) => {
+              e.preventDefault()
+              e.currentTarget.classList.remove('border-blue-400', 'bg-blue-500/10')
+            }}
+            onDrop={(e) => {
+              e.preventDefault()
+              e.currentTarget.classList.remove('border-blue-400', 'bg-blue-500/10')
+
+              try {
+                const data = JSON.parse(e.dataTransfer.getData('application/json'))
+                const rect = e.currentTarget.getBoundingClientRect()
+                const x = e.clientX - rect.left
+                const y = e.clientY - rect.top
+
+                // Create a temporary component for the dropped item
+                const tempComponent = {
+                  ...data,
+                  id: `temp-${Date.now()}`,
+                  position: { x, y }
+                }
+
+                // Store the drop position and component data
+                setDroppedComponent(tempComponent)
+
+                // Open the appropriate modal based on the type
+                if (data.type === 'risk_event') {
+                  setShowRiskModal(true)
+                } else if (data.type === 'business_asset') {
+                  setShowAssetModal(true)
+                } else if (data.type === 'defense_system') {
+                  setShowDefenseModal(true)
+                }
+              } catch (error) {
+                console.error('Error parsing dropped data:', error)
+              }
+            }}
+          >
             {/* Canvas for connections */}
             <canvas 
               ref={canvasRef}
