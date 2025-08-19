@@ -1450,14 +1450,20 @@ const ScenarioCanvasReplica = () => {
             onDragOver={(e) => {
               e.preventDefault()
               e.currentTarget.classList.add('border-blue-400', 'bg-blue-500/10')
+              const dropHint = e.currentTarget.querySelector('.drop-hint')
+              if (dropHint) dropHint.style.opacity = '1'
             }}
             onDragLeave={(e) => {
               e.preventDefault()
               e.currentTarget.classList.remove('border-blue-400', 'bg-blue-500/10')
+              const dropHint = e.currentTarget.querySelector('.drop-hint')
+              if (dropHint) dropHint.style.opacity = '0'
             }}
             onDrop={(e) => {
               e.preventDefault()
               e.currentTarget.classList.remove('border-blue-400', 'bg-blue-500/10')
+              const dropHint = e.currentTarget.querySelector('.drop-hint')
+              if (dropHint) dropHint.style.opacity = '0'
 
               try {
                 const data = JSON.parse(e.dataTransfer.getData('application/json'))
