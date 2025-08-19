@@ -99,7 +99,7 @@ export const AuthProvider = ({ children }) => {
           const userData = data.data;
           setUser(userData)
           setToken(savedToken)
-          
+
           // Update localStorage with fresh user data
           AuthStorage.setUser(userData);
           AuthStorage.setAuthStatus(true);
@@ -116,12 +116,12 @@ export const AuthProvider = ({ children }) => {
         setUser(null)
       }
     } catch (error) {
-      console.error('Auth check failed:', error)
-      // Only clear on network errors if token seems invalid
-      if (error.name !== 'TypeError') {
-        AuthStorage.clearAll();
-        setToken(null)
-        setUser(null)
+      console.warn('Auth check failed - working offline:', error.message)
+      // For network errors, keep the token but don't clear user data
+      // This allows the app to work offline with cached authentication
+      if (savedToken && AuthStorage.getUser()) {
+        setToken(savedToken)
+        setUser(AuthStorage.getUser())
       }
     } finally {
       setLoading(false)
