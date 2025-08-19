@@ -1054,7 +1054,8 @@ const ScenarioCanvasReplica = () => {
   const [showDefenseModal, setShowDefenseModal] = useState(false);
   const [showMonteCarloModal, setShowMonteCarloModal] = useState(false);
   const [monteCarloResults, setMonteCarloResults] = useState(null);
-  
+  const [droppedComponent, setDroppedComponent] = useState(null);
+
   const canvasRef = useRef(null);
 
   // Draw connections
