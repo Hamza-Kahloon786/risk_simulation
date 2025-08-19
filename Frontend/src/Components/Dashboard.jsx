@@ -1,9 +1,9 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
-import { 
-  TrendingUp, 
-  Activity, 
-  AlertTriangle, 
-  Shield, 
+import React, { useState, useEffect } from 'react'
+import {
+  TrendingUp,
+  Activity,
+  AlertTriangle,
+  Shield,
   Plus,
   BarChart3,
   Eye,
@@ -18,87 +18,7 @@ import {
   DollarSign,
   Building
 } from 'lucide-react'
-
-// Theme Context
-const ThemeContext = createContext()
-
-export const useTheme = () => {
-  const context = useContext(ThemeContext)
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider')
-  }
-  return context
-}
-
-// Theme Provider Component
-export const ThemeProvider = ({ children }) => {
-  const [isDarkMode, setIsDarkMode] = useState(true) // Default to dark mode
-
-  // Toggle theme function
-  const toggleTheme = () => {
-    setIsDarkMode(prev => !prev)
-  }
-
-  // Theme classes object
-  const themeClasses = {
-    // Background classes
-    bg: {
-      dashboard: isDarkMode ? 'bg-white' : 'bg-gray-900',
-      card: isDarkMode ? 'bg-gray-50' : 'bg-gray-800',
-      secondary: isDarkMode ? 'bg-gray-100' : 'bg-gray-700',
-      hover: isDarkMode ? 'hover:bg-gray-100' : 'hover:bg-gray-750'
-    },
-    
-    // Text classes
-    text: {
-      primary: isDarkMode ? 'text-gray-900' : 'text-white',
-      secondary: isDarkMode ? 'text-gray-700' : 'text-gray-300',
-      muted: isDarkMode ? 'text-gray-500' : 'text-gray-400',
-      accent: isDarkMode ? 'text-blue-600' : 'text-blue-400'
-    },
-    
-    // Border classes
-    border: {
-      primary: isDarkMode ? 'border-gray-200' : 'border-gray-700',
-      secondary: isDarkMode ? 'border-gray-300' : 'border-gray-600'
-    },
-    
-    // Hover states
-    hover: {
-      bg: isDarkMode ? 'hover:bg-gray-100' : 'hover:bg-gray-750',
-      text: isDarkMode ? 'hover:text-gray-900' : 'hover:text-white'
-    },
-
-    // Input styles
-    input: {
-      base: isDarkMode 
-        ? 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-        : 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
-    },
-
-    // Button styles
-    button: {
-      primary: isDarkMode
-        ? 'bg-blue-600 hover:bg-blue-700 text-white'
-        : 'bg-blue-600 hover:bg-blue-700 text-white',
-      secondary: isDarkMode
-        ? 'bg-white hover:bg-gray-100 text-gray-900 border-gray-300'
-        : 'bg-gray-700 hover:bg-gray-600 text-white border-gray-600'
-    }
-  }
-
-  const value = {
-    isDarkMode,
-    toggleTheme,
-    themeClasses
-  }
-
-  return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
-  )
-}
+import { useTheme } from '../contexts/ThemeContext'
 
 // Theme Toggle Button Component
 const ThemeToggle = () => {
