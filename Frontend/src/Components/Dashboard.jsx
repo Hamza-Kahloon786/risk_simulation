@@ -48,7 +48,7 @@ const ThemeToggle = () => {
 // Dashboard Component with Theme Integration
 const Dashboard = () => {
   const [scenarios, setScenarios] = useState([])
-  const { themeClasses, isDarkMode } = useTheme()
+  const { themeClasses = {}, isDarkMode = true } = useTheme() || {}
   const [defenseStats, setDefenseStats] = useState({})
   const [events, setEvents] = useState([])
   const [defenses, setDefenses] = useState([])
