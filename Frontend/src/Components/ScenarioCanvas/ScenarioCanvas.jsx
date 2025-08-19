@@ -1103,48 +1103,57 @@ const ScenarioCanvasReplica = () => {
   }, [components, connections]);
 
   const addRiskEvent = (data) => {
+    const position = droppedComponent?.position || {
+      x: 200 + Math.random() * 400,
+      y: 150 + Math.random() * 200
+    };
+
     const newComponent = {
       id: `risk-${Date.now()}`,
       type: 'risk',
       name: data.name,
-      position: { 
-        x: 200 + Math.random() * 400, 
-        y: 150 + Math.random() * 200 
-      },
+      position,
       color: getComponentColor('risk'),
       data
     };
     setComponents(prev => [...prev, newComponent]);
+    setDroppedComponent(null); // Clear the dropped component data
   };
 
   const addBusinessAsset = (data) => {
+    const position = droppedComponent?.position || {
+      x: 200 + Math.random() * 400,
+      y: 250 + Math.random() * 200
+    };
+
     const newComponent = {
       id: `asset-${Date.now()}`,
       type: 'asset',
       name: data.name,
-      position: { 
-        x: 200 + Math.random() * 400, 
-        y: 250 + Math.random() * 200 
-      },
+      position,
       color: getComponentColor('asset'),
       data
     };
     setComponents(prev => [...prev, newComponent]);
+    setDroppedComponent(null); // Clear the dropped component data
   };
 
   const addDefenseSystem = (data) => {
+    const position = droppedComponent?.position || {
+      x: 200 + Math.random() * 400,
+      y: 300 + Math.random() * 150
+    };
+
     const newComponent = {
       id: `defense-${Date.now()}`,
       type: 'defense',
       name: data.name,
-      position: { 
-        x: 200 + Math.random() * 400, 
-        y: 300 + Math.random() * 150 
-      },
+      position,
       color: getComponentColor('defense'),
       data
     };
     setComponents(prev => [...prev, newComponent]);
+    setDroppedComponent(null); // Clear the dropped component data
   };
 
   const deleteComponent = (componentId) => {
