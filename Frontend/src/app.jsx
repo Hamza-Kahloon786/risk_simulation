@@ -3,21 +3,21 @@ import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ThemeProvider } from './contexts/ThemeContext'
-import ProtectedRoute from './Components/ProtectedRoute'
+import ProtectedRoute from './components/ProtectedRoute'
 
 // Public Pages
 import Home from './pages/Home'
-import Login from './Components/Auth/Login'
-import Register from './Components/Auth/Register'
+import Login from './components/Auth/Login'
+import Register from './components/Auth/Register'
 
 // Protected Components
-import Sidebar from './Components/Sidebar'
-import Dashboard from './Components/Dashboard'
-import Scenarios from './Components/Scenarios'
-import ScenarioCanvas from './Components/ScenarioCanvas'
-import Locations from './Components/Locations'
-import Events from './Components/Events'
-import Defenses from './Components/Defenses'
+import Sidebar from './components/Sidebar'
+import Dashboard from './components/Dashboard'
+import Scenarios from './components/Scenarios'
+import ScenarioCanvas from './components/ScenarioCanvas/ScenarioCanvas'
+import Locations from './components/Locations'
+import Events from './components/Events'
+import Defenses from './components/Defenses'
 
 // Component to redirect authenticated users away from auth pages
 const AuthRedirect = ({ children }) => {
@@ -83,9 +83,7 @@ const AppRoutes = () => {
       
       <Route path="/scenarios/:id" element={
         <ProtectedRoute>
-          <ProtectedLayout>
-            <ScenarioCanvas />
-          </ProtectedLayout>
+          <ScenarioCanvas />
         </ProtectedRoute>
       } />
       
@@ -119,14 +117,14 @@ const AppRoutes = () => {
   )
 }
 
-function app() {
+function App() {
   return (
-     <ThemeProvider>
-    <AuthProvider>
-      <AppRoutes />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
     </ThemeProvider>
   )
 }
 
-export default app
+export default App
