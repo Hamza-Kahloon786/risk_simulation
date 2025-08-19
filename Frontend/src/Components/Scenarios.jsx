@@ -1,4 +1,4 @@
-// frontend/src/components/Scenarios.jsx - REAL DATA IMPLEMENTATION
+// frontend/src/components/Scenarios.jsx - FIXED WITH WORKING EDIT/DELETE
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { 
@@ -13,10 +13,13 @@ import {
   Clock,
   TrendingUp,
   AlertTriangle,
-  Activity
+  Activity,
+  Eye,
+  MoreVertical
 } from 'lucide-react'
 import { scenariosAPI } from '../services/api'
 import CreateScenarioModal from './Modals/CreateScenarioModal'
+// import EditScenarioModal from './Modals/EditScenarioModal'
 import { useTheme } from '../contexts/ThemeContext'
 
 const Scenarios = () => {
@@ -25,9 +28,12 @@ const Scenarios = () => {
   const [scenarios, setScenarios] = useState([])
   const [loading, setLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingScenario, setEditingScenario] = useState(null)
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('All Status')
+  const [deleteLoading, setDeleteLoading] = useState(null)
 
   useEffect(() => {
     loadScenarios()
@@ -86,36 +92,114 @@ const Scenarios = () => {
     navigate(`/scenarios/${scenarioId}`)
   }
 
-  const handleDeleteScenario = async (scenario, e) => {
-    e.stopPropagation()
+  const handleEditScenario = (scenario, e) => {
+    if (e) e.stopPropagation()
     
+    const scenarioId = scenario.id || scenario._id || scenario.scenario_id
+    if (!scenarioId) {
+      console.error('No ID found in scenario:', scenario)
+      setError('Invalid scenario: missing ID')
+      return
+    }
+    
+    console.log('Editing scenario:', scenario)
+    setEditingScenario(scenario)
+    setShowEditModal(true)
+  }
+
+  const handleDeleteScenario = async (scenario, e) => {
+    if (e) e.stopPropagation()
+    
+    const scenarioId = scenario.id || scenario._id || scenario.scenario_id
     const scenarioName = scenario.name || scenario.title || 'this scenario'
-    if (!window.confirm(`Are you sure you want to delete "${scenarioName}"?`)) {
+    
+    if (!scenarioId) {
+      setError('Cannot delete scenario: missing ID')
+      return
+    }
+
+    // Confirmation dialog
+    const confirmMessage = `Are you sure you want to delete "${scenarioName}"?\n\nThis action cannot be undone and will permanently remove:\n• The scenario and all its data\n• Associated risk events\n• Business assets\n• Defense systems\n• Analysis results`
+    
+    if (!window.confirm(confirmMessage)) {
       return
     }
 
     try {
-      const scenarioId = scenario.id || scenario._id || scenario.scenario_id
-      if (!scenarioId) {
-        throw new Error('Cannot delete scenario: missing ID')
-      }
+      setDeleteLoading(scenarioId)
+      setError('')
       
       console.log('Deleting scenario:', scenarioId)
-      await scenariosAPI.delete(scenarioId)
-      console.log('Scenario deleted successfully')
       
-      // Reload scenarios after deletion
-      await loadScenarios()
+      // Call the API to delete the scenario
+      await scenariosAPI.delete(scenarioId)
+      
+      console.log('Scenario deleted successfully from database')
+      
+      // Remove the scenario from local state immediately for better UX
+      setScenarios(prevScenarios => 
+        prevScenarios.filter(s => 
+          (s.id || s._id || s.scenario_id) !== scenarioId
+        )
+      )
+      
+      // Show success message briefly
+      setError(`Successfully deleted "${scenarioName}"`)
+      setTimeout(() => setError(''), 3000) // Clear success message after 3 seconds
+      
     } catch (error) {
       console.error('Error deleting scenario:', error)
-      setError(`Failed to delete scenario: ${error.message}`)
+      setError(`Failed to delete "${scenarioName}": ${error.message}`)
+      
+      // If delete failed, reload scenarios to ensure consistency
+      loadScenarios()
+    } finally {
+      setDeleteLoading(null)
     }
   }
 
   const handleCreateScenario = async (newScenario) => {
     console.log('New scenario created:', newScenario)
+    setShowCreateModal(false)
     // Reload scenarios to get the latest data
     await loadScenarios()
+  }
+
+  const handleUpdateScenario = async (updatedScenario) => {
+    console.log('Scenario updated:', updatedScenario)
+    setShowEditModal(false)
+    setEditingScenario(null)
+    // Reload scenarios to get the latest data
+    await loadScenarios()
+  }
+
+  const handleRunAnalysis = async (scenario, e) => {
+    if (e) e.stopPropagation()
+    
+    const scenarioId = scenario.id || scenario._id || scenario.scenario_id
+    if (!scenarioId) {
+      setError('Cannot run analysis: missing scenario ID')
+      return
+    }
+
+    try {
+      console.log('Running analysis for scenario:', scenarioId)
+      
+      // Call the run analysis API
+      const result = await scenariosAPI.runAnalysis(scenarioId)
+      console.log('Analysis started:', result)
+      
+      // Show success message
+      setError(`Analysis started for "${scenario.name || 'scenario'}". Results will be available shortly.`)
+      setTimeout(() => setError(''), 5000)
+      
+      // Reload scenarios to get updated status
+      await loadScenarios()
+      
+    } catch (error) {
+      console.error('Error running analysis:', error)
+      setError(`Failed to start analysis: ${error.message}`)
+    }
   }
 
   // Calculate real-time stats from actual data
@@ -295,8 +379,9 @@ const Scenarios = () => {
             </div>
             <button
               onClick={loadScenarios}
+              disabled={loading}
               className={`
-                px-4 py-3 rounded-lg border transition-colors flex items-center space-x-2
+                px-4 py-3 rounded-lg border transition-colors flex items-center space-x-2 disabled:opacity-50
                 ${themeClasses.bg.card}
                 ${isDarkMode 
                   ? 'border-gray-700 text-white hover:bg-gray-700' 
@@ -304,7 +389,7 @@ const Scenarios = () => {
                 }
               `}
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               <span>Refresh</span>
             </button>
           </div>
@@ -379,143 +464,215 @@ const Scenarios = () => {
         </div>
       </div>
 
-      {/* Error Message */}
+      {/* Error/Success Message */}
       {error && (
-        <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
-          <p className="text-red-400">{error}</p>
-          <button 
-            onClick={() => setError('')}
-            className="text-red-300 hover:text-red-200 text-xs mt-1"
-          >
-            Dismiss
-          </button>
+        <div className={`mb-6 p-4 rounded-lg border ${
+          error.includes('Successfully') 
+            ? 'bg-green-500/10 border-green-500/20 text-green-400'
+            : 'bg-red-500/10 border-red-500/20 text-red-400'
+        }`}>
+          <div className="flex items-center justify-between">
+            <p>{error}</p>
+            <button 
+              onClick={() => setError('')}
+              className={`ml-4 ${
+                error.includes('Successfully') 
+                  ? 'text-green-300 hover:text-green-200' 
+                  : 'text-red-300 hover:text-red-200'
+              } text-xs`}
+            >
+              ×
+            </button>
+          </div>
         </div>
       )}
 
       {/* Scenarios Grid - Using Real Data */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredScenarios.map((scenario) => (
-          <div
-            key={scenario.id || scenario._id || scenario.scenario_id}
-            className={`
-              rounded-lg p-6 border cursor-pointer transition-all duration-200 hover:shadow-lg group
-              ${themeClasses.bg.card}
-              ${isDarkMode 
-                ? 'border-gray-700 hover:border-gray-600' 
-                : 'border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md'
-              }
-            `}
-          >
-            {/* Scenario Header */}
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className={`text-lg font-semibold ${themeClasses.text.primary} truncate`}>
-                    {scenario.name || scenario.title || 'Untitled Scenario'}
-                  </h3>
-                  <span className={`px-2 py-1 rounded text-xs font-medium ml-2 ${
-                    (scenario.status || '').toLowerCase() === 'completed' ? 'bg-green-500/20 text-green-400' :
-                    (scenario.status || '').toLowerCase() === 'running' ? 'bg-blue-500/20 text-blue-400' :
-                    (scenario.status || '').toLowerCase() === 'ready' ? 'bg-yellow-500/20 text-yellow-400' :
-                    isDarkMode ? 'bg-gray-500/20 text-gray-400' : 'bg-gray-200 text-gray-600'
-                  }`}>
-                    {getScenarioStatus(scenario)}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-4 text-sm mb-4">
-                  <div className="flex items-center space-x-1">
-                    <Clock className={`w-4 h-4 ${themeClasses.text.muted}`} />
-                    <span className={themeClasses.text.muted}>
-                      {formatTimeAgo(scenario.created_at || scenario.createdAt)}
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <TrendingUp className={`w-4 h-4 ${themeClasses.text.muted}`} />
-                    <span className={themeClasses.text.muted}>
-                      {getRiskEventsCount(scenario)}/10
-                    </span>
-                  </div>
-                </div>
-                {!(scenario.has_results || scenario.hasResults || scenario.analysis_results) && (
-                  <div className="flex items-center space-x-1 mb-4">
-                    <div className={`w-2 h-2 rounded-full bg-gray-400`}></div>
-                    <span className={`text-sm ${themeClasses.text.muted}`}>No results</span>
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  console.log('Edit scenario:', scenario)
-                }}
-                className={`
-                  p-1 opacity-0 group-hover:opacity-100 transition-opacity
-                  ${isDarkMode 
-                    ? 'text-gray-400 hover:text-white' 
-                    : 'text-gray-500 hover:text-gray-700'
-                  }
-                `}
-                title="Edit Scenario"
-              >
-                <Edit className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Scenario Stats - Right aligned with real data */}
-            <div className="flex justify-end mb-4">
-              <div className="text-right">
-                <p className={`text-2xl font-bold ${themeClasses.text.primary}`}>
-                  {formatP50Impact(scenario)}
-                </p>
-                <p className={`text-xs ${themeClasses.text.muted}`}>P50 Impact</p>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center justify-between space-x-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  console.log('Edit scenario:', scenario)
-                }}
-                className={`
-                  flex-1 flex items-center justify-center space-x-2 py-2 px-4 rounded-lg border transition-colors
-                  ${isDarkMode 
-                    ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
-                    : 'border-gray-300 text-gray-600 hover:bg-gray-50'
-                  }
-                `}
-              >
-                <Edit className="w-4 h-4" />
-                <span className="text-sm">Edit</span>
-              </button>
-              
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleOpenScenario(scenario)
-                }}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg flex items-center justify-center space-x-2 transition-colors"
-              >
-                <Play className="w-4 h-4" />
-                <span className="text-sm">Open</span>
-              </button>
-            </div>
-
-            {/* Debug Info - Remove in production */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className={`
-                mt-2 text-xs border-t pt-2
+        {filteredScenarios.map((scenario) => {
+          const scenarioId = scenario.id || scenario._id || scenario.scenario_id
+          const isDeleting = deleteLoading === scenarioId
+          
+          return (
+            <div
+              key={scenarioId}
+              className={`
+                rounded-lg p-6 border cursor-pointer transition-all duration-200 hover:shadow-lg group relative
+                ${themeClasses.bg.card}
                 ${isDarkMode 
-                  ? 'text-gray-500 border-gray-700' 
-                  : 'text-gray-400 border-gray-200'
+                  ? 'border-gray-700 hover:border-gray-600' 
+                  : 'border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md'
                 }
-              `}>
-                ID: {scenario.id || scenario._id || scenario.scenario_id || 'No ID'}
+                ${isDeleting ? 'opacity-50 pointer-events-none' : ''}
+              `}
+              onClick={() => !isDeleting && handleOpenScenario(scenario)}
+            >
+              {/* Delete Loading Overlay */}
+              {isDeleting && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg">
+                  <div className="flex items-center space-x-2 text-red-400">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-400"></div>
+                    <span className="text-sm">Deleting...</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Scenario Header */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className={`text-lg font-semibold ${themeClasses.text.primary} truncate`}>
+                      {scenario.name || scenario.title || 'Untitled Scenario'}
+                    </h3>
+                    <span className={`px-2 py-1 rounded text-xs font-medium ml-2 ${
+                      (scenario.status || '').toLowerCase() === 'completed' ? 'bg-green-500/20 text-green-400' :
+                      (scenario.status || '').toLowerCase() === 'running' ? 'bg-blue-500/20 text-blue-400' :
+                      (scenario.status || '').toLowerCase() === 'ready' ? 'bg-yellow-500/20 text-yellow-400' :
+                      isDarkMode ? 'bg-gray-500/20 text-gray-400' : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      {getScenarioStatus(scenario)}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-4 text-sm mb-4">
+                    <div className="flex items-center space-x-1">
+                      <Clock className={`w-4 h-4 ${themeClasses.text.muted}`} />
+                      <span className={themeClasses.text.muted}>
+                        {formatTimeAgo(scenario.created_at || scenario.createdAt)}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <TrendingUp className={`w-4 h-4 ${themeClasses.text.muted}`} />
+                      <span className={themeClasses.text.muted}>
+                        {getRiskEventsCount(scenario)}/10
+                      </span>
+                    </div>
+                  </div>
+                  {!(scenario.has_results || scenario.hasResults || scenario.analysis_results) && (
+                    <div className="flex items-center space-x-1 mb-4">
+                      <div className={`w-2 h-2 rounded-full bg-gray-400`}></div>
+                      <span className={`text-sm ${themeClasses.text.muted}`}>No results</span>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Action Menu */}
+                <div className="relative group/menu">
+                  <button
+                    onClick={(e) => e.stopPropagation()}
+                    className={`
+                      p-1 opacity-0 group-hover:opacity-100 transition-opacity
+                      ${isDarkMode 
+                        ? 'text-gray-400 hover:text-white' 
+                        : 'text-gray-500 hover:text-gray-700'
+                      }
+                    `}
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                  
+                  {/* Dropdown Menu */}
+                  <div className={`
+                    absolute right-0 top-8 w-40 rounded-lg border shadow-lg z-10 py-1
+                    opacity-0 group-hover/menu:opacity-100 transition-opacity pointer-events-none group-hover/menu:pointer-events-auto
+                    ${themeClasses.bg.card}
+                    ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}
+                  `}>
+                    <button
+                      onClick={(e) => handleEditScenario(scenario, e)}
+                      className={`
+                        w-full px-3 py-2 text-left text-sm flex items-center space-x-2 transition-colors
+                        ${isDarkMode 
+                          ? 'text-gray-300 hover:bg-gray-700' 
+                          : 'text-gray-700 hover:bg-gray-100'
+                        }
+                      `}
+                    >
+                      <Edit className="w-4 h-4" />
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      onClick={(e) => handleRunAnalysis(scenario, e)}
+                      className={`
+                        w-full px-3 py-2 text-left text-sm flex items-center space-x-2 transition-colors
+                        ${isDarkMode 
+                          ? 'text-gray-300 hover:bg-gray-700' 
+                          : 'text-gray-700 hover:bg-gray-100'
+                        }
+                      `}
+                    >
+                      <Activity className="w-4 h-4" />
+                      <span>Run Analysis</span>
+                    </button>
+                    <button
+                      onClick={(e) => handleDeleteScenario(scenario, e)}
+                      disabled={isDeleting}
+                      className={`
+                        w-full px-3 py-2 text-left text-sm flex items-center space-x-2 transition-colors
+                        text-red-400 hover:bg-red-500/10 disabled:opacity-50
+                      `}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
-        ))}
+
+              {/* Scenario Stats - Right aligned with real data */}
+              <div className="flex justify-end mb-4">
+                <div className="text-right">
+                  <p className={`text-2xl font-bold ${themeClasses.text.primary}`}>
+                    {formatP50Impact(scenario)}
+                  </p>
+                  <p className={`text-xs ${themeClasses.text.muted}`}>P50 Impact</p>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between space-x-2">
+                <button
+                  onClick={(e) => handleEditScenario(scenario, e)}
+                  disabled={isDeleting}
+                  className={`
+                    flex-1 flex items-center justify-center space-x-2 py-2 px-4 rounded-lg border transition-colors disabled:opacity-50
+                    ${isDarkMode 
+                      ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                      : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                    }
+                  `}
+                >
+                  <Edit className="w-4 h-4" />
+                  <span className="text-sm">Edit</span>
+                </button>
+                
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleOpenScenario(scenario)
+                  }}
+                  disabled={isDeleting}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg flex items-center justify-center space-x-2 transition-colors disabled:opacity-50"
+                >
+                  <Eye className="w-4 h-4" />
+                  <span className="text-sm">View</span>
+                </button>
+              </div>
+
+              {/* Debug Info - Remove in production */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className={`
+                  mt-2 text-xs border-t pt-2
+                  ${isDarkMode 
+                    ? 'text-gray-500 border-gray-700' 
+                    : 'text-gray-400 border-gray-200'
+                  }
+                `}>
+                  ID: {scenarioId || 'No ID'}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
 
       {/* Empty State - No search results */}
@@ -575,6 +732,18 @@ const Scenarios = () => {
         <CreateScenarioModal
           onClose={() => setShowCreateModal(false)}
           onSubmit={handleCreateScenario}
+        />
+      )}
+
+      {/* Edit Scenario Modal */}
+      {showEditModal && editingScenario && (
+        <EditScenarioModal
+          scenario={editingScenario}
+          onClose={() => {
+            setShowEditModal(false)
+            setEditingScenario(null)
+          }}
+          onSubmit={handleUpdateScenario}
         />
       )}
     </div>

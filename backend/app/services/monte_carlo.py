@@ -1,4 +1,7 @@
 # Nozama-chatbot/backend/app/services/monte_carlo.py
+# This code implements a Monte Carlo simulation for risk analysis scenarios.
+# It includes a MonteCarloSimulation class that runs simulations based on risk events, business assets, and defense systems.
+# The results include various statistical measures such as median impact, severe impact, and expected annual loss.
 import numpy as np
 from typing import List, Dict, Any
 

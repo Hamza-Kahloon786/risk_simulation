@@ -1,3 +1,6 @@
+# This code is part of a FastAPI application that implements Monte Carlo simulations for risk analysis scenarios.
+# It includes endpoints for running simulations and retrieving analysis results, as well as utility functions for serializing risk events.
+# routes/analysis.py
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, Any, List
 from bson import ObjectId

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { 
   ArrowLeft, 
   BarChart3, 
@@ -28,30 +29,72 @@ import {
   RotateCcw,
   Settings,
   Trash2,
-  Download
+  Download,
+  Loader
 } from 'lucide-react';
+import { 
+  scenariosAPI, 
+  riskEventsAPI, 
+  businessAssetsAPI, 
+  defenseSystemsAPI
+} from '../../services/api';
+import api from '../../services/api';
 
-// Risk Event Modal Component
-const RiskEventModal = ({ isOpen, onClose, onSave }) => {
+// Risk Event Modal Component with real data
+const RiskEventModal = ({ isOpen, onClose, onSave, initialData = null }) => {
   const [formData, setFormData] = useState({
     name: '',
     type: 'Cyber Attack',
     description: '',
     likelihood: 15,
     impact: 500000,
-    duration: 3
+    duration: 3,
+    category: 'cyber'
   });
 
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    } else if (isOpen) {
+      // Reset form when opening modal for new event
+      setFormData({
+        name: '',
+        type: 'Cyber Attack',
+        description: '',
+        likelihood: 15,
+        impact: 500000,
+        duration: 3,
+        category: 'cyber'
+      });
+    }
+  }, [isOpen, initialData]);
+
   const handleSave = () => {
-    onSave(formData);
-    setFormData({
-      name: '',
-      type: 'Cyber Attack',
-      description: '',
-      likelihood: 15,
-      impact: 500000,
-      duration: 3
-    });
+    if (!formData.name.trim()) {
+      alert('Event name is required');
+      return;
+    }
+    
+    // Create node structure for Monte Carlo simulation
+    const nodeData = {
+      id: initialData?.id || `event-${Date.now()}`,
+      type: 'event',
+      name: formData.name,
+      description: formData.description,
+      likelihood: formData.likelihood / 100, // Convert percentage to decimal
+      severity: formData.impact,
+      severityUsd: formData.impact,
+      durationHrs: formData.duration * 24, // Convert days to hours
+      category: formData.category,
+      data: {
+        likelihood: formData.likelihood / 100,
+        severityUsd: formData.impact,
+        durationHrs: formData.duration * 24,
+        category: formData.category
+      }
+    };
+    
+    onSave(nodeData);
     onClose();
   };
 
@@ -66,7 +109,9 @@ const RiskEventModal = ({ isOpen, onClose, onSave }) => {
               <Zap className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">Risk Event Details</h2>
+              <h2 className="text-xl font-bold text-white">
+                {initialData ? 'Edit Risk Event' : 'Risk Event Details'}
+              </h2>
               <p className="text-gray-400 text-sm">Configure properties and parameters</p>
             </div>
           </div>
@@ -98,6 +143,8 @@ const RiskEventModal = ({ isOpen, onClose, onSave }) => {
                 <option>Supply Disruption</option>
                 <option>Operational Risk</option>
                 <option>Legal Action</option>
+                <option>Natural Disaster</option>
+                <option>Financial Risk</option>
               </select>
             </div>
           </div>
@@ -109,7 +156,7 @@ const RiskEventModal = ({ isOpen, onClose, onSave }) => {
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white resize-none"
               rows={3}
-              placeholder="Malicious cyber security incident"
+              placeholder="Malicious cyber security incident targeting critical systems"
             />
           </div>
 
@@ -161,7 +208,7 @@ const RiskEventModal = ({ isOpen, onClose, onSave }) => {
 
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="text-sm font-medium text-gray-300">Duration (3d)</label>
+                <label className="text-sm font-medium text-gray-300">Duration ({formData.duration}d)</label>
                 <div className="flex space-x-4 text-xs text-gray-400">
                   <span>1 Hour</span>
                   <span>1 Day</span>
@@ -172,7 +219,7 @@ const RiskEventModal = ({ isOpen, onClose, onSave }) => {
               <input
                 type="range"
                 min="1"
-                max="720"
+                max="30"
                 value={formData.duration}
                 onChange={(e) => setFormData(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
                 className="w-full"
@@ -187,7 +234,7 @@ const RiskEventModal = ({ isOpen, onClose, onSave }) => {
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-3 px-4 font-medium flex items-center justify-center space-x-2"
           >
             <Save className="w-4 h-4" />
-            <span>Save Event</span>
+            <span>{initialData ? 'Update Event' : 'Save Event'}</span>
           </button>
           <button
             onClick={onClose}
@@ -201,8 +248,8 @@ const RiskEventModal = ({ isOpen, onClose, onSave }) => {
   );
 };
 
-// Business Asset Modal Component
-const BusinessAssetModal = ({ isOpen, onClose, onSave }) => {
+// Business Asset Modal Component with real data
+const BusinessAssetModal = ({ isOpen, onClose, onSave, initialData = null }) => {
   const [formData, setFormData] = useState({
     name: '',
     location: '',
@@ -211,15 +258,42 @@ const BusinessAssetModal = ({ isOpen, onClose, onSave }) => {
     criticality: 'Medium'
   });
 
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    } else if (isOpen) {
+      setFormData({
+        name: '',
+        location: '',
+        description: '',
+        valuation: 1000000,
+        criticality: 'Medium'
+      });
+    }
+  }, [isOpen, initialData]);
+
   const handleSave = () => {
-    onSave(formData);
-    setFormData({
-      name: '',
-      location: '',
-      description: '',
-      valuation: 1000000,
-      criticality: 'Medium'
-    });
+    if (!formData.name.trim()) {
+      alert('Asset name is required');
+      return;
+    }
+    
+    const nodeData = {
+      id: initialData?.id || `asset-${Date.now()}`,
+      type: 'asset',
+      name: formData.name,
+      description: formData.description,
+      location: formData.location,
+      valuation: formData.valuation,
+      criticality: formData.criticality,
+      data: {
+        valuation: formData.valuation,
+        criticality: formData.criticality,
+        location: formData.location
+      }
+    };
+    
+    onSave(nodeData);
     onClose();
   };
 
@@ -234,7 +308,9 @@ const BusinessAssetModal = ({ isOpen, onClose, onSave }) => {
               <Building2 className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">Business Asset Details</h2>
+              <h2 className="text-xl font-bold text-white">
+                {initialData ? 'Edit Business Asset' : 'Business Asset Details'}
+              </h2>
               <p className="text-gray-400 text-sm">Configure properties and parameters</p>
             </div>
           </div>
@@ -274,7 +350,7 @@ const BusinessAssetModal = ({ isOpen, onClose, onSave }) => {
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white resize-none"
               rows={3}
-              placeholder="Mission-critical IT infrastructure"
+              placeholder="Mission-critical IT infrastructure supporting core business operations"
             />
           </div>
 
@@ -335,29 +411,6 @@ const BusinessAssetModal = ({ isOpen, onClose, onSave }) => {
                 ))}
               </div>
             </div>
-
-            <div className="bg-gray-800 rounded-lg p-4">
-              <h4 className="text-white font-medium mb-2">Asset Summary</h4>
-              <div className="space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Valuation:</span>
-                  <span className="text-cyan-400">${formData.valuation.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Criticality:</span>
-                  <span className={`font-medium ${
-                    formData.criticality === 'Low' ? 'text-green-400' :
-                    formData.criticality === 'Medium' ? 'text-yellow-400' : 'text-red-400'
-                  }`}>
-                    {formData.criticality} ({formData.criticality === 'Low' ? '25' : formData.criticality === 'Medium' ? '60' : '100'}%)
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Location:</span>
-                  <span className="text-white">{formData.location || 'Primary Data Center'}</span>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -367,7 +420,7 @@ const BusinessAssetModal = ({ isOpen, onClose, onSave }) => {
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-3 px-4 font-medium flex items-center justify-center space-x-2"
           >
             <Save className="w-4 h-4" />
-            <span>Save Asset</span>
+            <span>{initialData ? 'Update Asset' : 'Save Asset'}</span>
           </button>
           <button
             onClick={onClose}
@@ -381,8 +434,8 @@ const BusinessAssetModal = ({ isOpen, onClose, onSave }) => {
   );
 };
 
-// Defense System Modal Component
-const DefenseSystemModal = ({ isOpen, onClose, onSave }) => {
+// Defense System Modal Component with real data
+const DefenseSystemModal = ({ isOpen, onClose, onSave, initialData = null }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -390,14 +443,40 @@ const DefenseSystemModal = ({ isOpen, onClose, onSave }) => {
     cost: 50000
   });
 
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    } else if (isOpen) {
+      setFormData({
+        name: '',
+        description: '',
+        effectiveness: 30,
+        cost: 50000
+      });
+    }
+  }, [isOpen, initialData]);
+
   const handleSave = () => {
-    onSave(formData);
-    setFormData({
-      name: '',
-      description: '',
-      effectiveness: 30,
-      cost: 50000
-    });
+    if (!formData.name.trim()) {
+      alert('Defense name is required');
+      return;
+    }
+    
+    const nodeData = {
+      id: initialData?.id || `defense-${Date.now()}`,
+      type: 'defense',
+      name: formData.name,
+      description: formData.description,
+      mitigationPct: formData.effectiveness / 100, // Convert to decimal
+      annualCostUsd: formData.cost,
+      data: {
+        mitigationPct: formData.effectiveness / 100,
+        annualCostUsd: formData.cost,
+        effectiveness: formData.effectiveness
+      }
+    };
+    
+    onSave(nodeData);
     onClose();
   };
 
@@ -405,7 +484,6 @@ const DefenseSystemModal = ({ isOpen, onClose, onSave }) => {
 
   const costPerProtection = formData.cost / (formData.effectiveness / 100);
   const roiRating = costPerProtection < 100000 ? 'Excellent' : costPerProtection < 500000 ? 'Good' : 'Fair';
-  const damageReduction = `${formData.effectiveness}% damage reduction`;
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
@@ -416,7 +494,9 @@ const DefenseSystemModal = ({ isOpen, onClose, onSave }) => {
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">Defense System Details</h2>
+              <h2 className="text-xl font-bold text-white">
+                {initialData ? 'Edit Defense System' : 'Defense System Details'}
+              </h2>
               <p className="text-gray-400 text-sm">Configure properties and parameters</p>
             </div>
           </div>
@@ -433,7 +513,7 @@ const DefenseSystemModal = ({ isOpen, onClose, onSave }) => {
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white"
-              placeholder="Insurance Coverage"
+              placeholder="Firewall Security System"
             />
           </div>
 
@@ -444,7 +524,7 @@ const DefenseSystemModal = ({ isOpen, onClose, onSave }) => {
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white resize-none"
               rows={3}
-              placeholder="Financial risk transfer and coverage"
+              placeholder="Advanced network security with AI threat detection and automated response"
             />
           </div>
 
@@ -473,7 +553,7 @@ const DefenseSystemModal = ({ isOpen, onClose, onSave }) => {
                 onChange={(e) => setFormData(prev => ({ ...prev, effectiveness: parseInt(e.target.value) }))}
                 className="w-full"
               />
-              <p className="text-xs text-gray-500 mt-1">Damage reduction</p>
+              <p className="text-xs text-gray-500 mt-1">Damage reduction percentage</p>
             </div>
 
             <div>
@@ -514,7 +594,7 @@ const DefenseSystemModal = ({ isOpen, onClose, onSave }) => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Annual Protection Value:</span>
-                  <span className="text-green-400 font-bold">{damageReduction}</span>
+                  <span className="text-green-400 font-bold">{formData.effectiveness}% reduction</span>
                 </div>
               </div>
             </div>
@@ -527,7 +607,7 @@ const DefenseSystemModal = ({ isOpen, onClose, onSave }) => {
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-3 px-4 font-medium flex items-center justify-center space-x-2"
           >
             <Save className="w-4 h-4" />
-            <span>Save Defense</span>
+            <span>{initialData ? 'Update Defense' : 'Save Defense'}</span>
           </button>
           <button
             onClick={onClose}
@@ -541,99 +621,7 @@ const DefenseSystemModal = ({ isOpen, onClose, onSave }) => {
   );
 };
 
-const downloadResultsAsImage = async (results, scenarioName = "risk-analysis") => {
-  try {
-    // Check if html2canvas is available
-    if (typeof html2canvas !== 'undefined') {
-      // Find the modal element by its data attribute
-      const modalElement = document.querySelector('[data-modal="monte-carlo-results"]');
-      
-      if (modalElement) {
-        console.log('Capturing complete modal element...', modalElement);
-        
-        // Store original styles
-        const originalStyles = {
-          overflow: modalElement.style.overflow,
-          maxHeight: modalElement.style.maxHeight,
-          position: modalElement.style.position,
-          top: modalElement.style.top,
-          left: modalElement.style.left
-        };
-        
-        // Temporarily make modal visible and fully expanded for capture
-        modalElement.style.overflow = 'visible';
-        modalElement.style.maxHeight = 'none';
-        modalElement.style.position = 'absolute';
-        modalElement.style.top = '0';
-        modalElement.style.left = '0';
-        
-        // Wait a moment for layout to settle
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        // Configure html2canvas options for complete capture
-        const canvas = await html2canvas(modalElement, {
-          backgroundColor: '#1f2937', // Gray-800 background
-          scale: 1.5, // Good resolution without being too large
-          useCORS: true,
-          allowTaint: true,
-          logging: false,
-          removeContainer: false,
-          onclone: (clonedDoc) => {
-            // Ensure the cloned element also shows all content
-            const clonedElement = clonedDoc.querySelector('[data-modal="monte-carlo-results"]');
-            if (clonedElement) {
-              clonedElement.style.overflow = 'visible';
-              clonedElement.style.maxHeight = 'none';
-              clonedElement.style.position = 'relative';
-              clonedElement.style.top = '0';
-              clonedElement.style.left = '0';
-            }
-          }
-        });
-        
-        // Restore original styles
-        Object.assign(modalElement.style, originalStyles);
-        
-        console.log('Canvas created with full content:', canvas.width, 'x', canvas.height);
-        
-        // Convert canvas to blob and download
-        canvas.toBlob((blob) => {
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          
-          // Create filename with scenario name and timestamp
-          const timestamp = new Date().toISOString().split('T')[0];
-          const safeName = scenarioName.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-          link.download = `monte-carlo-analysis-${safeName}-${timestamp}.png`;
-          
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          
-          console.log('Complete Monte Carlo results image downloaded successfully');
-          alert('Complete analysis results saved as image!');
-        }, 'image/png', 0.92); // High quality PNG
-        
-        return;
-      } else {
-        console.error('Modal element not found');
-      }
-    } else {
-      console.error('html2canvas library not found');
-    }
-    
-    // Fallback method
-    console.log('Using fallback download method');
-    alert('Image capture not available. Please ensure html2canvas library is loaded.');
-    
-  } catch (error) {
-    console.error('Error downloading results as image:', error);
-    alert('Error downloading image. Please try again.');
-  }
-};
-
+// Monte Carlo Results Modal with real data
 const MonteCarloResultsModal = ({ results, scenarioName, onClose }) => {
   if (!results) return null;
 
@@ -651,27 +639,12 @@ const MonteCarloResultsModal = ({ results, scenarioName, onClose }) => {
     return { level: 'Critical', color: 'text-red-400', bg: 'bg-red-500/20' };
   };
 
-  const risk = getRiskLevel(results.risk_score || 50);
-
-  // Generate heat map data
-  const generateHeatMapData = () => {
-    const data = [];
-    for (let i = 0; i < 10; i++) {
-      const row = [];
-      for (let j = 0; j < 20; j++) {
-        // Create a distribution that peaks around the middle
-        const value = Math.random() * 100 * 
-                     Math.exp(-Math.pow((j - 10) / 5, 2)) * 
-                     Math.exp(-Math.pow((i - 5) / 3, 2));
-        row.push(value);
-      }
-      data.push(row);
-    }
-    return data;
-  };
-
-  const heatMapData = generateHeatMapData();
-  const maxHeatValue = Math.max(...heatMapData.flat());
+  // Calculate risk score based on P90 impact
+  const riskScore = results.p90?.financialImpact ? 
+    Math.min(100, Math.round((results.p90.financialImpact / 1000000) * 25)) : 
+    50;
+  
+  const risk = getRiskLevel(riskScore);
 
   return (
     <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4" onClick={onClose}>
@@ -693,11 +666,21 @@ const MonteCarloResultsModal = ({ results, scenarioName, onClose }) => {
           </div>
           <div className="flex items-center space-x-2">
             <button 
-              onClick={() => downloadResultsAsImage(results, scenarioName)}
+              onClick={() => {
+                // Download functionality
+                const dataStr = JSON.stringify(results, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `monte-carlo-results-${Date.now()}.json`;
+                link.click();
+                URL.revokeObjectURL(url);
+              }}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center space-x-2 transition-colors"
             >
               <Download className="w-4 h-4" />
-              <span>Save Results</span>
+              <span>Download</span>
             </button>
             <button 
               onClick={onClose} 
@@ -718,18 +701,22 @@ const MonteCarloResultsModal = ({ results, scenarioName, onClose }) => {
                 <TrendingUp className="w-8 h-8 text-blue-400" />
                 <div>
                   <p className="text-sm text-gray-400">P50 (Median Impact)</p>
-                  <p className="text-3xl font-bold text-white">{formatCurrency(results.p50_median_impact || 75000)}</p>
+                  <p className="text-3xl font-bold text-white">
+                    {formatCurrency(results.p50?.financialImpact || 0)}
+                  </p>
                 </div>
               </div>
               <p className="text-xs text-gray-400">50% of scenarios result in losses below this amount</p>
             </div>
 
-            <div className="bg-gray-700 rounded-lg p-6 border border-gray-600">
+          <div className="bg-gray-700 rounded-lg p-6 border border-gray-600">
               <div className="flex items-center space-x-3 mb-3">
                 <AlertTriangle className="w-8 h-8 text-orange-400" />
                 <div>
                   <p className="text-sm text-gray-400">P90 (Severe Impact)</p>
-                  <p className="text-3xl font-bold text-white">{formatCurrency(results.p90_severe_impact || 180000)}</p>
+                  <p className="text-3xl font-bold text-white">
+                    {formatCurrency(results.p90?.financialImpact || 0)}
+                  </p>
                 </div>
               </div>
               <p className="text-xs text-gray-400">10% chance of losses exceeding this amount</p>
@@ -740,7 +727,9 @@ const MonteCarloResultsModal = ({ results, scenarioName, onClose }) => {
                 <DollarSign className="w-8 h-8 text-red-400" />
                 <div>
                   <p className="text-sm text-gray-400">Worst Case Scenario</p>
-                  <p className="text-3xl font-bold text-white">{formatCurrency(results.worst_case_scenario || 350000)}</p>
+                  <p className="text-3xl font-bold text-white">
+                    {formatCurrency(results.worstCase?.financialImpact || 0)}
+                  </p>
                 </div>
               </div>
               <p className="text-xs text-gray-400">Maximum potential loss identified</p>
@@ -751,7 +740,9 @@ const MonteCarloResultsModal = ({ results, scenarioName, onClose }) => {
                 <BarChart3 className="w-8 h-8 text-blue-400" />
                 <div>
                   <p className="text-sm text-gray-400">Expected Annual Loss</p>
-                  <p className="text-3xl font-bold text-white">{formatCurrency(results.expected_annual_loss || 95000)}</p>
+                  <p className="text-3xl font-bold text-white">
+                    {formatCurrency(results.expectedAnnualLoss || 0)}
+                  </p>
                 </div>
               </div>
               <p className="text-xs text-gray-400">Average expected loss per year</p>
@@ -761,11 +752,13 @@ const MonteCarloResultsModal = ({ results, scenarioName, onClose }) => {
               <div className="flex items-center space-x-3 mb-3">
                 <Settings className="w-8 h-8 text-yellow-400" />
                 <div>
-                  <p className="text-sm text-gray-400">Value at Risk (95%)</p>
-                  <p className="text-3xl font-bold text-white">{formatCurrency(results.value_at_risk_95 || 200000)}</p>
+                  <p className="text-sm text-gray-400">Value at Risk (90%)</p>
+                  <p className="text-3xl font-bold text-white">
+                    {formatCurrency(results.valueAtRisk?.p90 || 0)}
+                  </p>
                 </div>
               </div>
-              <p className="text-xs text-gray-400">5% chance of exceeding this loss</p>
+              <p className="text-xs text-gray-400">10% chance of exceeding this loss</p>
             </div>
 
             <div className="bg-gray-700 rounded-lg p-6 border border-gray-600">
@@ -773,189 +766,17 @@ const MonteCarloResultsModal = ({ results, scenarioName, onClose }) => {
                 <Shield className="w-8 h-8 text-green-400" />
                 <div>
                   <p className="text-sm text-gray-400">Security ROI</p>
-                  <p className="text-3xl font-bold text-white">{(results.security_roi || 15.5).toFixed(1)}%</p>
+                  <p className="text-3xl font-bold text-white">
+                    {(results.returnOnSecurityInvestment * 100 || 0).toFixed(1)}%
+                  </p>
                 </div>
               </div>
               <p className="text-xs text-green-400">Return on defense investment</p>
             </div>
           </div>
 
-          {/* Risk Assessment and Analysis */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            {/* Risk Distribution */}
-            <div className="bg-gray-700 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                <BarChart3 className="w-5 h-5 mr-2" />
-                Risk Assessment
-              </h3>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center">
-                  <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <span className="text-white font-bold text-lg">{(results.risk_distribution?.low || 25)}%</span>
-                  </div>
-                  <p className="text-sm text-gray-300 font-medium">Low Risk</p>
-                  <p className="text-xs text-gray-400">Manageable impact</p>
-                </div>
-                <div className="text-center">
-                  <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <span className="text-white font-bold text-lg">{(results.risk_distribution?.high || 20)}%</span>
-                  </div>
-                  <p className="text-sm text-gray-300 font-medium">High Risk</p>
-                  <p className="text-xs text-gray-400">Significant impact</p>
-                </div>
-                <div className="text-center">
-                  <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <span className="text-white font-bold text-lg">{(results.risk_distribution?.critical || 10)}%</span>
-                  </div>
-                  <p className="text-sm text-gray-300 font-medium">Critical Risk</p>
-                  <p className="text-xs text-gray-400">Severe impact</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Confidence Intervals */}
-            <div className="bg-gray-700 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                <TrendingUp className="w-5 h-5 mr-2" />
-                Confidence Intervals
-              </h3>
-              <div className="space-y-6">
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-gray-300">P50 Percentile</span>
-                    <span className="text-sm text-white font-medium">{formatCurrency(results.p50_median_impact || 75000)}</span>
-                  </div>
-                  <div className="w-full bg-gray-600 rounded-full h-3">
-                    <div className="bg-gradient-to-r from-blue-500 to-blue-400 h-3 rounded-full" style={{ width: '50%' }}></div>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">Median expected loss</p>
-                </div>
-                
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-gray-300">P90 Percentile</span>
-                    <span className="text-sm text-white font-medium">{formatCurrency(results.p90_severe_impact || 180000)}</span>
-                  </div>
-                  <div className="w-full bg-gray-600 rounded-full h-3">
-                    <div className="bg-gradient-to-r from-orange-500 to-orange-400 h-3 rounded-full" style={{ width: '90%' }}></div>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">Severe loss threshold</p>
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-gray-300">Maximum Loss</span>
-                    <span className="text-sm text-white font-medium">{formatCurrency(results.worst_case_scenario || 350000)}</span>
-                  </div>
-                  <div className="w-full bg-gray-600 rounded-full h-3">
-                    <div className="bg-gradient-to-r from-red-500 to-red-400 h-3 rounded-full" style={{ width: '100%' }}></div>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">Worst case scenario</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Advanced Analytics */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            {/* Value at Risk Analysis */}
-            <div className="bg-gray-700 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                📊 Value at Risk Analysis
-              </h3>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center p-4 bg-gray-600 rounded-lg">
-                  <div>
-                    <p className="text-sm font-medium text-white">95% VaR</p>
-                    <p className="text-xs text-gray-400">5% chance of exceeding</p>
-                  </div>
-                  <span className="text-xl font-bold text-white">{formatCurrency(results.value_at_risk_95 || 200000)}</span>
-                </div>
-                
-                <div className="flex justify-between items-center p-4 bg-gray-600 rounded-lg">
-                  <div>
-                    <p className="text-sm font-medium text-white">Expected Shortfall</p>
-                    <p className="text-xs text-gray-400">Average loss beyond VaR</p>
-                  </div>
-                  <span className="text-xl font-bold text-red-400">{formatCurrency(results.conditional_var || 280000)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Component Analysis */}
-            <div className="bg-gray-700 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                🎯 Components Analyzed
-              </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Risk Events</span>
-                  <span className="bg-red-500 text-white px-2 py-1 rounded text-sm font-medium">
-                    {results.components_analyzed?.risk_events || 0}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Business Assets</span>
-                  <span className="bg-blue-500 text-white px-2 py-1 rounded text-sm font-medium">
-                    {results.components_analyzed?.business_assets || 0}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Defense Systems</span>
-                  <span className="bg-green-500 text-white px-2 py-1 rounded text-sm font-medium">
-                    {results.components_analyzed?.defense_systems || 0}
-                  </span>
-                </div>
-                <div className="pt-2 border-t border-gray-600">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300 font-medium">Analysis Date</span>
-                    <span className="text-gray-400 text-sm">
-                      {new Date(results.generated_at || Date.now()).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Impact Distribution Visualization */}
-          <div className="bg-gray-700 rounded-lg p-6 mb-8">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-              📈 Impact Distribution Heat Map
-            </h3>
-            <div className="h-48 bg-gray-800 rounded-lg p-4">
-              <div className="grid grid-rows-10 grid-cols-20 gap-1 h-full w-full">
-                {heatMapData.map((row, i) => (
-                  row.map((value, j) => {
-                    const intensity = Math.round((value / maxHeatValue) * 100);
-                    let color;
-                    if (intensity < 25) color = 'bg-green-500';
-                    else if (intensity < 50) color = 'bg-yellow-500';
-                    else if (intensity < 75) color = 'bg-orange-500';
-                    else color = 'bg-red-500';
-                    
-                    return (
-                      <div 
-                        key={`${i}-${j}`}
-                        className={`${color} opacity-${intensity < 10 ? 30 : intensity < 30 ? 50 : intensity < 60 ? 70 : 90} rounded-sm`}
-                        title={`Value: ${value.toFixed(1)}`}
-                      />
-                    );
-                  })
-                ))}
-              </div>
-              <div className="flex justify-between items-center mt-2 text-xs text-gray-400">
-                <span>Low Impact</span>
-                <span>High Impact</span>
-              </div>
-              <div className="flex items-center mt-1">
-                <div className="flex-1 h-2 bg-gradient-to-r from-green-500 via-yellow-500 via-orange-500 to-red-500 rounded-full"></div>
-              </div>
-            </div>
-          </div>
-
-          {/* Risk Summary */}
-          <div className={`${risk.bg} rounded-lg p-6 border border-gray-600`}>
+          {/* Risk Assessment Summary */}
+          <div className={`${risk.bg} rounded-lg p-6 border border-gray-600 mb-8`}>
             <div className="flex items-start space-x-4">
               <div className={`w-4 h-4 ${risk.color.replace('text-', 'bg-')} rounded-full mt-1 flex-shrink-0`}></div>
               <div className="flex-1">
@@ -965,22 +786,21 @@ const MonteCarloResultsModal = ({ results, scenarioName, onClose }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <p className="text-gray-300 mb-3">
-                      Based on Monte Carlo simulation with <strong>{(results.iterations || 10000).toLocaleString()}</strong> iterations across {results.components_analyzed?.risk_events || 0} risk scenarios.
+                      Based on Monte Carlo simulation with <strong>{(results.iterations || 10000).toLocaleString()}</strong> iterations across {results.scenarios || 0} risk scenarios.
                     </p>
                     <ul className="text-sm text-gray-400 space-y-1">
-                      <li>• Expected annual loss: <span className="text-white">{formatCurrency(results.expected_annual_loss || 95000)}</span></li>
-                      <li>• Security investment ROI: <span className="text-green-400">{(results.security_roi || 15.5).toFixed(1)}%</span></li>
-                      <li>• Risk mitigation coverage: <span className="text-blue-400">{Math.min(95, (results.components_analyzed?.defense_systems || 0) * 25)}%</span></li>
+                      <li>• Expected annual loss: <span className="text-white">{formatCurrency(results.expectedAnnualLoss || 0)}</span></li>
+                      <li>• Security investment ROI: <span className="text-green-400">{(results.returnOnSecurityInvestment * 100 || 0).toFixed(1)}%</span></li>
+                      <li>• Simulation iterations: <span className="text-blue-400">{(results.iterations || 10000).toLocaleString()}</span></li>
                     </ul>
                   </div>
                   <div>
-                    <h5 className="text-white font-medium mb-2">Recommendations:</h5>
+                    <h5 className="text-white font-medium mb-2">Key Findings:</h5>
                     <ul className="text-sm text-gray-400 space-y-1">
-                      {results.security_roi < 20 && <li>• Consider additional security investments</li>}
-                      {(results.components_analyzed?.defense_systems || 0) < 3 && <li>• Implement more defense layers</li>}
-                      {results.risk_score > 70 && <li>• Priority focus on high-impact risks</li>}
-                      <li>• Regular reassessment recommended</li>
-                      <li>• Monitor key risk indicators</li>
+                      <li>• Median impact: {formatCurrency(results.p50?.financialImpact || 0)}</li>
+                      <li>• 90th percentile: {formatCurrency(results.p90?.financialImpact || 0)}</li>
+                      <li>• Worst case: {formatCurrency(results.worstCase?.financialImpact || 0)}</li>
+                      <li>• Risk events analyzed: {results.scenarios || 0}</li>
                     </ul>
                   </div>
                 </div>
@@ -990,76 +810,627 @@ const MonteCarloResultsModal = ({ results, scenarioName, onClose }) => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
+
+// Main Scenario Canvas Component
 const ScenarioCanvasReplica = () => {
-  const [components, setComponents] = useState([
-    {
-      id: 'cyber-attack-1',
-      type: 'risk',
-      name: 'Cyber Attack',
-      position: { x: 400, y: 200 },
-      color: 'bg-cyan-500 border-cyan-400',
-      data: {
-        description: 'Ransomware, data breaches',
-        likelihood: 15,
-        impact: 500000,
-        duration: 3
-      }
-    },
-    {
-      id: 'security-control-1',
-      type: 'defense',
-      name: 'Security Control',
-      position: { x: 200, y: 350 },
-      color: 'bg-green-500 border-green-400',
-      data: {
-        description: 'Firewalls, monitoring',
-        effectiveness: 80,
-        cost: 25000
-      }
-    },
-    {
-      id: 'critical-system-1',
-      type: 'asset',
-      name: 'Critical System',
-      position: { x: 500, y: 350 },
-      color: 'bg-blue-500 border-blue-400',
-      data: {
-        description: 'IT infrastructure, databases',
-        valuation: 1000000,
-        criticality: 'High'
-      }
-    }
-  ]);
+  const navigate = useNavigate();
+  const { id } = useParams();
   
-  const [connections, setConnections] = useState([
-    { from: 'cyber-attack-1', to: 'security-control-1' },
-    { from: 'cyber-attack-1', to: 'critical-system-1' }
-  ]);
-  
+  // State management
+  const [scenario, setScenario] = useState(null);
+  const [components, setComponents] = useState([]);
+  const [connections, setConnections] = useState([]);
   const [selectedComponent, setSelectedComponent] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionStart, setConnectionStart] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  
+  // Modal states
+  const [showRiskModal, setShowRiskModal] = useState(false);
+  const [showAssetModal, setShowAssetModal] = useState(false);
+  const [showDefenseModal, setShowDefenseModal] = useState(false);
+  const [showMonteCarloModal, setShowMonteCarloModal] = useState(false);
+  const [editingComponent, setEditingComponent] = useState(null);
+  const [monteCarloResults, setMonteCarloResults] = useState(null);
+  const [runningAnalysis, setRunningAnalysis] = useState(false);
+  
+  // UI state
   const [sidebarSections, setSidebarSections] = useState({
     riskEvents: true,
     businessAssets: true,
     defenseSystems: true,
     mobileOpen: false
   });
-
-  // Modal states
-  const [showRiskModal, setShowRiskModal] = useState(false);
-  const [showAssetModal, setShowAssetModal] = useState(false);
-  const [showDefenseModal, setShowDefenseModal] = useState(false);
-  const [showMonteCarloModal, setShowMonteCarloModal] = useState(false);
-  const [monteCarloResults, setMonteCarloResults] = useState(null);
   const [droppedComponent, setDroppedComponent] = useState(null);
 
   const canvasRef = useRef(null);
 
-  // Draw connections
+  // Load scenario data on mount
   useEffect(() => {
+    if (id && id !== 'new') {
+      loadScenario();
+    } else {
+      // New scenario - clear everything
+      setScenario({
+        id: null,
+        name: 'New Scenario',
+        description: '',
+        status: 'draft'
+      });
+      setComponents([]);
+      setConnections([]);
+      setMonteCarloResults(null);
+      setLoading(false);
+    }
+  }, [id]);
+
+  // Draw connections on canvas
+  useEffect(() => {
+    drawConnections();
+  }, [components, connections]);
+
+  // API functions
+  const loadScenario = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await scenariosAPI.getById(id);
+      const scenarioData = response.scenario || response.data?.scenario || response;
+      
+      console.log('Loaded scenario:', scenarioData);
+      
+      setScenario(scenarioData);
+      
+      // Load scenario components (nodes and edges)
+      if (scenarioData.inputs?.nodes) {
+        setComponents(scenarioData.inputs.nodes);
+      }
+      if (scenarioData.inputs?.edges) {
+        setConnections(scenarioData.inputs.edges.map(edge => ({
+          from: edge.source,
+          to: edge.target,
+          type: edge.type
+        })));
+      }
+      
+      // Load previous Monte Carlo results if available
+      if (scenarioData.results) {
+        setMonteCarloResults(scenarioData.results);
+      }
+      
+    } catch (error) {
+      console.error('Error loading scenario:', error);
+      setError('Failed to load scenario. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveScenario = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+      
+      const scenarioData = {
+        name: scenario?.name || 'New Risk Scenario',
+        description: scenario?.description || '',
+        status: scenario?.status || 'draft',
+        inputs: {
+          nodes: components,
+          edges: connections.map(conn => ({
+            source: conn.from,
+            target: conn.to,
+            type: conn.type || getEdgeType(conn.from, conn.to)
+          }))
+        },
+        // Keep existing results if they exist
+        results: monteCarloResults || scenario?.results
+      };
+      
+      let response;
+      if (scenario?.id) {
+        // Update existing scenario
+        console.log('Updating existing scenario:', scenario.id);
+        response = await scenariosAPI.update(scenario.id, scenarioData);
+      } else {
+        // Create new scenario
+        console.log('Creating new scenario');
+        response = await scenariosAPI.create(scenarioData);
+      }
+      
+      console.log('Save response:', response);
+      
+      // Handle different response formats
+      let updatedScenario = response;
+      if (response.scenario) {
+        updatedScenario = response.scenario;
+      } else if (response.data?.scenario) {
+        updatedScenario = response.data.scenario;
+      } else if (response.data && response.data.scenarios) {
+        // Handle case where response contains scenarios array
+        updatedScenario = response.data.scenarios[0] || response.data;
+      }
+      
+      if (updatedScenario && updatedScenario.id) {
+        setScenario(updatedScenario);
+        console.log('Scenario saved successfully with ID:', updatedScenario.id);
+        
+        // Update URL if this was a new scenario
+        if (!scenario?.id && updatedScenario.id) {
+          navigate(`/scenarios/${updatedScenario.id}`, { replace: true });
+        }
+      } else {
+        console.warn('Unexpected save response format:', response);
+        // If we can't get the updated scenario, at least update what we have
+        if (!scenario?.id) {
+          setScenario(prev => ({ ...prev, ...scenarioData }));
+        }
+      }
+      
+      return updatedScenario;
+      
+    } catch (error) {
+      console.error('Error saving scenario:', error);
+      setError(`Failed to save scenario: ${error.message}`);
+      throw error; // Re-throw so calling functions know save failed
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const runMonteCarloAnalysis = async () => {
+    try {
+      if (components.length === 0) {
+        alert('Please add at least one component before running analysis');
+        return;
+      }
+      
+      const riskComponents = components.filter(c => c.type === 'event');
+      if (riskComponents.length === 0) {
+        alert('Please add at least one risk event before running analysis');
+        return;
+      }
+      
+      setRunningAnalysis(true);
+      setError(null);
+      
+      // Ensure scenario is saved first and has an ID
+      let currentScenario = scenario;
+      if (!currentScenario?.id) {
+        console.log('Scenario not saved yet, saving first...');
+        
+        const scenarioToSave = {
+          name: currentScenario?.name || 'New Risk Scenario',
+          description: currentScenario?.description || 'Risk assessment scenario',
+          status: 'draft',
+          ownerId: 'current-user', // Add this for backend compatibility
+          inputs: {
+            nodes: components,
+            edges: connections.map(conn => ({
+              source: conn.from,
+              target: conn.to,
+              type: getEdgeType(conn.from, conn.to)
+            }))
+          }
+        };
+        
+        try {
+          console.log('Creating scenario with data:', scenarioToSave);
+          const createResponse = await scenariosAPI.create(scenarioToSave);
+          console.log('Create response received:', createResponse);
+          
+          // Handle various response formats from backend
+          let extractedScenario = null;
+          
+          if (createResponse.scenario) {
+            extractedScenario = createResponse.scenario;
+          } else if (createResponse.data?.scenario) {
+            extractedScenario = createResponse.data.scenario;
+          } else if (createResponse.data?.scenarios?.[0]) {
+            extractedScenario = createResponse.data.scenarios[0];
+          } else if (createResponse.scenarios?.[0]) {
+            extractedScenario = createResponse.scenarios[0];
+          } else if (createResponse.id) {
+            // If response has ID directly, use it
+            extractedScenario = createResponse;
+          } else if (createResponse.data?.id) {
+            extractedScenario = createResponse.data;
+          }
+          
+          console.log('Extracted scenario:', extractedScenario);
+          
+          if (!extractedScenario?.id) {
+            console.error('Full response structure:', JSON.stringify(createResponse, null, 2));
+            throw new Error(`Failed to create scenario - no ID found in response. Response: ${JSON.stringify(createResponse)}`);
+          }
+          
+          currentScenario = extractedScenario;
+          setScenario(currentScenario);
+          console.log('Scenario created with ID:', currentScenario.id);
+          
+          // Update URL to reflect the new scenario ID
+          navigate(`/scenarios/${currentScenario.id}`, { replace: true });
+          
+        } catch (saveError) {
+          console.error('Failed to save scenario:', saveError);
+          throw new Error(`Failed to save scenario before analysis: ${saveError.message}`);
+        }
+      }
+      
+      // Now create the separate entities that your backend expects
+      try {
+        await createScenarioComponents(currentScenario.id);
+        
+        // Verify that risk events were actually created in the right collection
+        try {
+          // Try different verification endpoints to see where the data actually ended up
+          const verificationEndpoints = [
+            `/scenarios/${currentScenario.id}/risk-events/`,
+            `/risk-events/?scenario_id=${currentScenario.id}`,
+            `/risk_events/?scenario_id=${currentScenario.id}`,
+            `/events/?scenario_id=${currentScenario.id}`
+          ];
+          
+          let riskEventsFound = 0;
+          let workingEndpoint = null;
+          
+          for (const endpoint of verificationEndpoints) {
+            try {
+              const checkResponse = await api.get(endpoint);
+              const eventsData = checkResponse.data;
+              const eventCount = Array.isArray(eventsData) ? eventsData.length : eventsData?.data?.length || 0;
+              
+              if (eventCount > 0) {
+                riskEventsFound = eventCount;
+                workingEndpoint = endpoint;
+                console.log(`✓ Found ${eventCount} risk events at ${endpoint}`);
+                break;
+              } else {
+                console.log(`⚪ No events found at ${endpoint}`);
+              }
+            } catch (verifyError) {
+              console.log(`❌ Verification failed for ${endpoint}:`, verifyError.response?.status || verifyError.message);
+            }
+          }
+          
+          console.log(`✓ Verification complete: ${riskEventsFound} risk events found${workingEndpoint ? ` at ${workingEndpoint}` : ''}`);
+          
+          if (riskEventsFound === 0) {
+            console.warn('⚠️ No risk events found in any collection after creation attempts');
+            
+              // Try one final approach: create directly in the risk_events collection with proper MongoDB format
+              const riskEvents = components.filter(c => c.type === 'event');
+              if (riskEvents.length > 0) {
+                console.log('🔄 Attempting direct MongoDB-style creation with ObjectId...');
+                
+                for (const event of riskEvents) {
+                  try {
+                    // Format data exactly as your backend expects
+                    const mongoRiskEventData = {
+                      scenario_id: currentScenario.id,  // Backend will convert string to ObjectId
+                      name: event.name,
+                      description: event.description || '',
+                      probability: (event.likelihood || 0) * 100,  // Your backend expects percentage
+                      impact_min: (event.severity || event.severityUsd || 0) * 0.5,
+                      impact_max: event.severity || event.severityUsd || 0,
+                      category: event.category || 'operational'
+                    };
+                    
+                    // Try the exact endpoint that should work
+                    const directResponse = await api.post('/risk_events/', mongoRiskEventData);
+                    console.log(`✅ SUCCESS: Created risk event in risk_events collection:`, event.name);
+                  } catch (directError) {
+                    console.error(`❌ Direct creation failed for ${event.name}:`, directError.response?.data || directError.message);
+                    
+                    // If that fails, try a different approach - maybe your backend has different routes
+                    console.log('🔄 Trying alternative routes...');
+                    
+                    // Check if there are routes for creating these entities
+                    const alternativeEndpoints = [
+                      { url: '/risk-events', method: 'POST' },
+                      { url: '/riskevents', method: 'POST' },
+                      { url: `/scenarios/${currentScenario.id}/risk_events`, method: 'POST' }
+                    ];
+                    
+                    for (const endpoint of alternativeEndpoints) {
+                      try {
+                        await api.post(endpoint.url, mongoRiskEventData);
+                        console.log(`✅ Alternative success via ${endpoint.url}:`, event.name);
+                        break;
+                      } catch (altError) {
+                        console.log(`❌ Alternative ${endpoint.url} failed:`, altError.response?.status);
+                      }
+                    }
+                  }
+                }
+                
+                // Also create business assets and defense systems
+                const businessAssets = components.filter(c => c.type === 'asset');
+                for (const asset of businessAssets) {
+                  try {
+                    const mongoAssetData = {
+                      scenario_id: currentScenario.id,
+                      name: asset.name,
+                      description: asset.description || '',
+                      value: asset.valuation || asset.data?.valuation || 0,  // Your backend expects 'value'
+                      criticality: asset.criticality || asset.data?.criticality || 'Medium',
+                      location: asset.location || asset.data?.location || ''
+                    };
+                    
+                    await api.post('/business_assets/', mongoAssetData);
+                    console.log(`✅ Created business asset:`, asset.name);
+                  } catch (assetError) {
+                    console.error(`❌ Business asset creation failed for ${asset.name}:`, assetError.message);
+                  }
+                }
+                
+                const defenseSystems = components.filter(c => c.type === 'defense');
+                for (const defense of defenseSystems) {
+                  try {
+                    const mongoDefenseData = {
+                      scenario_id: currentScenario.id,
+                      name: defense.name,
+                      description: defense.description || '',
+                      effectiveness: (defense.mitigationPct || defense.data?.mitigationPct || 0) * 100,  // Percentage
+                      coverage_percentage: 100,  // Your backend expects this field
+                      cost: defense.annualCostUsd || defense.data?.annualCostUsd || 0,
+                      maintenance_cost: 0  // Your backend uses this in ROI calculation
+                    };
+                    
+                    await api.post('/defense_systems/', mongoDefenseData);
+                    console.log(`✅ Created defense system:`, defense.name);
+                  } catch (defenseError) {
+                    console.error(`❌ Defense system creation failed for ${defense.name}:`, defenseError.message);
+                  }
+                }
+                
+                // Final verification with the exact query your backend uses
+                try {
+                  console.log('🔍 Final verification with backend-style query...');
+                  
+                  // Check if we can query the data the same way your backend does
+                  const finalCheck = await api.get(`/risk_events/?scenario_id=${currentScenario.id}`);
+                  const finalCount = Array.isArray(finalCheck.data) ? finalCheck.data.length : finalCheck.data?.length || 0;
+                  console.log(`✅ Final verification: ${finalCount} risk events found`);
+                  
+                  if (finalCount > 0) {
+                    console.log('🎉 SUCCESS: Risk events are now in the database and should be found by the analysis!');
+                  } else {
+                    console.warn('⚠️ Still no risk events found. Your backend might need different routes.');
+                    console.warn('💡 Suggestion: Check if your backend has routes for /risk_events/, /business_assets/, /defense_systems/');
+                  }
+                } catch (finalError) {
+                  console.log('❌ Final verification failed:', finalError.message);
+                }
+              }
+          }
+        } catch (checkError) {
+          console.warn('Could not verify risk events creation:', checkError.message);
+        }
+        
+      } catch (componentError) {
+        console.warn('Failed to create some scenario components:', componentError.message);
+        throw new Error(`Component creation failed: ${componentError.message}. Please ensure the scenario has the required components in the database.`);
+      }
+      
+      console.log('Running Monte Carlo analysis for scenario ID:', currentScenario.id);
+      
+      // Call the analysis API (no simulation data needed based on your backend)
+      try {
+        const response = await scenariosAPI.runAnalysis(currentScenario.id);
+        
+        console.log('Monte Carlo results received:', response);
+        
+        // The response should directly contain the results
+        const results = response;
+        
+        setMonteCarloResults(results);
+        setShowMonteCarloModal(true);
+        
+        // Update scenario with results
+        const updatedScenario = {
+          ...currentScenario,
+          results: results,
+          status: 'completed'
+        };
+        
+        setScenario(updatedScenario);
+        
+        // Save the updated scenario with results
+        try {
+          await scenariosAPI.update(currentScenario.id, updatedScenario);
+          console.log('Scenario updated with analysis results');
+        } catch (saveResultsError) {
+          console.warn('Failed to save analysis results:', saveResultsError.message);
+          // Don't throw error here as analysis was successful
+        }
+        
+      } catch (analysisError) {
+        console.error('Analysis API error:', analysisError);
+        console.error('Analysis error response:', analysisError.response?.data);
+        console.error('Analysis error status:', analysisError.response?.status);
+        
+        // If analysis fails due to missing components, show helpful message
+        if (analysisError.response?.status === 400) {
+          const errorMessage = analysisError.response?.data?.detail || analysisError.message;
+          if (errorMessage.includes('risk event')) {
+            throw new Error('Analysis failed: At least one risk event is required. Please add risk events to the scenario.');
+          } else {
+            throw new Error(`Analysis failed (400): ${errorMessage}`);
+          }
+        } else {
+          throw new Error(`Analysis failed: ${analysisError.message}`);
+        }
+      }
+      
+    } catch (error) {
+      console.error('Error running Monte Carlo analysis:', error);
+      setError(`Failed to run analysis: ${error.message}`);
+    } finally {
+      setRunningAnalysis(false);
+    }
+  };
+
+  // Helper function to create scenario components in separate collections
+  const createScenarioComponents = async (scenarioId) => {
+    const riskEvents = components.filter(c => c.type === 'event');
+    const businessAssets = components.filter(c => c.type === 'asset');
+    const defenseSystems = components.filter(c => c.type === 'defense');
+    
+    console.log('Creating scenario components:', {
+      riskEvents: riskEvents.length,
+      businessAssets: businessAssets.length,
+      defenseSystems: defenseSystems.length
+    });
+    
+    // Since the separate APIs might not exist, let's try a direct approach
+    // or fallback to storing the data in the scenario itself
+    
+    try {
+      // Try to create risk events using the API
+      for (const event of riskEvents) {
+        const riskEventData = {
+          scenario_id: scenarioId,
+          name: event.name,
+          description: event.description || '',
+          probability: (event.likelihood || 0) * 100, // Convert back to percentage
+          impact_min: (event.severity || event.severityUsd || 0) * 0.5,
+          impact_max: event.severity || event.severityUsd || 0,
+          category: event.category || 'operational'
+        };
+        
+        try {
+          // Try to create via API first
+          if (typeof riskEventsAPI !== 'undefined' && riskEventsAPI.create) {
+            await riskEventsAPI.create(scenarioId, riskEventData);
+            console.log('✓ Created risk event via API:', event.name);
+          } else {
+            throw new Error('riskEventsAPI not available');
+          }
+        } catch (apiError) {
+          console.warn(`❌ API creation failed for risk event ${event.name}:`, apiError.message);
+          
+          // Fallback: Try direct API call
+          try {
+            const response = await api.post(`/scenarios/${scenarioId}/risk-events/`, riskEventData);
+            console.log('✓ Created risk event via direct API:', event.name);
+          } catch (directError) {
+            console.error(`❌ Direct API also failed for risk event ${event.name}:`, directError.message);
+            
+            // Ultimate fallback: Create via generic API if available
+            try {
+              const response = await api.post('/risk-events/', {
+                ...riskEventData,
+                scenario_id: scenarioId
+              });
+              console.log('✓ Created risk event via generic API:', event.name);
+            } catch (genericError) {
+              console.error(`❌ All methods failed for risk event ${event.name}:`, genericError.message);
+            }
+          }
+        }
+      }
+      
+      // Try to create business assets
+      for (const asset of businessAssets) {
+        const assetData = {
+          scenario_id: scenarioId,
+          name: asset.name,
+          description: asset.description || '',
+          value: asset.valuation || asset.data?.valuation || 0,
+          criticality: asset.criticality || asset.data?.criticality || 'Medium',
+          location: asset.location || asset.data?.location || ''
+        };
+        
+        try {
+          if (typeof businessAssetsAPI !== 'undefined' && businessAssetsAPI.create) {
+            await businessAssetsAPI.create(scenarioId, assetData);
+            console.log('✓ Created business asset via API:', asset.name);
+          } else {
+            throw new Error('businessAssetsAPI not available');
+          }
+        } catch (apiError) {
+          // Try direct API calls as fallback
+          try {
+            await api.post(`/scenarios/${scenarioId}/business-assets/`, assetData);
+            console.log('✓ Created business asset via direct API:', asset.name);
+          } catch (directError) {
+            try {
+              await api.post('/business-assets/', { ...assetData, scenario_id: scenarioId });
+              console.log('✓ Created business asset via generic API:', asset.name);
+            } catch (genericError) {
+              console.error(`❌ All methods failed for business asset ${asset.name}:`, genericError.message);
+            }
+          }
+        }
+      }
+      
+      // Try to create defense systems
+      for (const defense of defenseSystems) {
+        const defenseData = {
+          scenario_id: scenarioId,
+          name: defense.name,
+          description: defense.description || '',
+          effectiveness: (defense.mitigationPct || defense.data?.mitigationPct || 0) * 100,
+          cost: defense.annualCostUsd || defense.data?.annualCostUsd || 0,
+          coverage_percentage: 100
+        };
+        
+        try {
+          if (typeof defenseSystemsAPI !== 'undefined' && defenseSystemsAPI.create) {
+            await defenseSystemsAPI.create(scenarioId, defenseData);
+            console.log('✓ Created defense system via API:', defense.name);
+          } else {
+            throw new Error('defenseSystemsAPI not available');
+          }
+        } catch (apiError) {
+          // Try direct API calls as fallback
+          try {
+            await api.post(`/scenarios/${scenarioId}/defense-systems/`, defenseData);
+            console.log('✓ Created defense system via direct API:', defense.name);
+          } catch (directError) {
+            try {
+              await api.post('/defense-systems/', { ...defenseData, scenario_id: scenarioId });
+              console.log('✓ Created defense system via generic API:', defense.name);
+            } catch (genericError) {
+              console.error(`❌ All methods failed for defense system ${defense.name}:`, genericError.message);
+            }
+          }
+        }
+      }
+      
+    } catch (error) {
+      console.error('Error in createScenarioComponents:', error);
+      throw error;
+    }
+    
+    // Wait a moment for the database to sync
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    console.log('✓ Finished creating scenario components');
+  };
+
+  // Helper functions
+  const getEdgeType = (fromId, toId) => {
+    const fromComponent = components.find(c => c.id === fromId);
+    const toComponent = components.find(c => c.id === toId);
+    
+    if (fromComponent?.type === 'event' && toComponent?.type === 'asset') {
+      return 'event-to-asset';
+    } else if (fromComponent?.type === 'asset' && toComponent?.type === 'defense') {
+      return 'asset-to-defense';
+    } else if (fromComponent?.type === 'event' && toComponent?.type === 'defense') {
+      return 'event-to-defense';
+    }
+    return 'connection';
+  };
+
+  const drawConnections = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -1100,72 +1471,72 @@ const ScenarioCanvasReplica = () => {
         ctx.fill();
       }
     });
-  }, [components, connections]);
-
-  const addRiskEvent = (data) => {
-    const position = droppedComponent?.position || {
-      x: 200 + Math.random() * 400,
-      y: 150 + Math.random() * 200
-    };
-
-    const newComponent = {
-      id: `risk-${Date.now()}`,
-      type: 'risk',
-      name: data.name,
-      position,
-      color: getComponentColor('risk'),
-      data
-    };
-    setComponents(prev => [...prev, newComponent]);
-    setDroppedComponent(null); // Clear the dropped component data
   };
 
-  const addBusinessAsset = (data) => {
-    const position = droppedComponent?.position || {
+  // Component management
+  const addComponent = (nodeData, position = null) => {
+    const finalPosition = position || droppedComponent?.position || {
       x: 200 + Math.random() * 400,
-      y: 250 + Math.random() * 200
+      y: 150 + Math.random() * 300
     };
 
     const newComponent = {
-      id: `asset-${Date.now()}`,
-      type: 'asset',
-      name: data.name,
-      position,
-      color: getComponentColor('asset'),
-      data
+      ...nodeData,
+      position: finalPosition,
+      color: getComponentColor(nodeData.type)
     };
+    
     setComponents(prev => [...prev, newComponent]);
-    setDroppedComponent(null); // Clear the dropped component data
+    setDroppedComponent(null);
+    
+    // Auto-save after adding component
+    setTimeout(saveScenario, 500);
   };
 
-  const addDefenseSystem = (data) => {
-    const position = droppedComponent?.position || {
-      x: 200 + Math.random() * 400,
-      y: 300 + Math.random() * 150
-    };
-
-    const newComponent = {
-      id: `defense-${Date.now()}`,
-      type: 'defense',
-      name: data.name,
-      position,
-      color: getComponentColor('defense'),
-      data
-    };
-    setComponents(prev => [...prev, newComponent]);
-    setDroppedComponent(null); // Clear the dropped component data
+  const updateComponent = (updatedComponent) => {
+    setComponents(prev => 
+      prev.map(comp => 
+        comp.id === updatedComponent.id ? updatedComponent : comp
+      )
+    );
+    setEditingComponent(null);
+    
+    // Auto-save after updating component
+    setTimeout(saveScenario, 500);
   };
 
   const deleteComponent = (componentId) => {
     setComponents(prev => prev.filter(c => c.id !== componentId));
     setConnections(prev => prev.filter(c => c.from !== componentId && c.to !== componentId));
     setSelectedComponent(null);
+    
+    // Auto-save after deleting component
+    setTimeout(saveScenario, 500);
   };
 
+  const editComponent = (component) => {
+    setEditingComponent(component);
+    
+    if (component.type === 'event') {
+      setShowRiskModal(true);
+    } else if (component.type === 'asset') {
+      setShowAssetModal(true);
+    } else if (component.type === 'defense') {
+      setShowDefenseModal(true);
+    }
+  };
+
+  // Connection management
   const handleComponentClick = (component) => {
     if (isConnecting && connectionStart) {
       if (connectionStart !== component.id) {
-        setConnections(prev => [...prev, { from: connectionStart, to: component.id }]);
+        const newConnection = {
+          from: connectionStart,
+          to: component.id,
+          type: getEdgeType(connectionStart, component.id)
+        };
+        setConnections(prev => [...prev, newConnection]);
+        setTimeout(saveScenario, 500);
       }
       setIsConnecting(false);
       setConnectionStart(null);
@@ -1181,9 +1552,10 @@ const ScenarioCanvasReplica = () => {
     setConnectionStart(componentId);
   };
 
+  // Helper components
   const ComponentIcon = ({ type }) => {
     switch (type) {
-      case 'risk':
+      case 'event':
         return <Zap className="w-6 h-6 text-white" />;
       case 'asset':
         return <Building2 className="w-6 h-6 text-white" />;
@@ -1196,7 +1568,7 @@ const ScenarioCanvasReplica = () => {
 
   const getComponentColor = (type) => {
     switch (type) {
-      case 'risk':
+      case 'event':
         return 'bg-red-500 border-red-400';
       case 'asset':
         return 'bg-blue-500 border-blue-400';
@@ -1207,86 +1579,33 @@ const ScenarioCanvasReplica = () => {
     }
   };
 
-  const riskEventOptions = [
-    { name: 'Add Cyber Attack', description: 'Ransomware, data breaches', icon: '🔴', color: 'bg-red-600' },
-    { name: 'Add Supply Disruption', description: 'Supplier failures, logistics', icon: '📦', color: 'bg-orange-600' },
-    { name: 'Add Operational Risk', description: 'Process failures, human errors', icon: '⚠️', color: 'bg-yellow-600' },
-    { name: 'Add Legal Action', description: 'Lawsuits, regulatory issues', icon: '⚖️', color: 'bg-red-700' }
-  ];
-
-  const businessAssetOptions = [
-    { name: 'Add Critical System', description: 'IT infrastructure, databases', icon: '🏢', color: 'bg-blue-600' },
-    { name: 'Add Business Location', description: 'Offices, plants', icon: '📍', color: 'bg-blue-500' },
-    { name: 'Add Data Asset', description: 'Customer data, IP', icon: '💾', color: 'bg-blue-700' },
-    { name: 'Add Key Personnel', description: 'Critical staff, expertise', icon: '👥', color: 'bg-blue-800' }
-  ];
-
-  const defenseSystemOptions = [
-    { name: 'Add Security Control', description: 'Firewalls, monitoring', icon: '🛡️', color: 'bg-green-600' },
-    { name: 'Add Business Continuity', description: 'DR, redundancy', icon: '🔄', color: 'bg-green-500' },
-    { name: 'Add Insurance Coverage', description: 'Risk transfer, coverage', icon: '📋', color: 'bg-green-700' },
-    { name: 'Add Backup Systems', description: 'Data backup, recovery', icon: '💿', color: 'bg-green-800' }
-  ];
-
-  const runMonteCarloAnalysis = () => {
-    // Generate realistic Monte Carlo results based on current components
-    const riskComponents = components.filter(c => c.type === 'risk');
-    const assetComponents = components.filter(c => c.type === 'asset');
-    const defenseComponents = components.filter(c => c.type === 'defense');
-    
-    if (riskComponents.length === 0) {
-      alert('Please add at least one risk event before running analysis');
-      return;
-    }
-
-    // Calculate realistic results based on component data
-    const totalRiskImpact = riskComponents.reduce((sum, r) => sum + (r.data.impact * r.data.likelihood / 100), 0);
-    const defenseEffectiveness = defenseComponents.reduce((sum, d) => sum + d.data.effectiveness, 0) / Math.max(defenseComponents.length, 1);
-    const mitigationFactor = 1 - (defenseEffectiveness / 100 * 0.8); // Defense reduces impact by up to 80%
-    
-    const results = {
-      iterations: 10000,
-      p50_median_impact: Math.round(totalRiskImpact * 0.6 * mitigationFactor),
-      p90_severe_impact: Math.round(totalRiskImpact * 1.2 * mitigationFactor),
-      worst_case_scenario: Math.round(totalRiskImpact * 1.8 * mitigationFactor),
-      expected_annual_loss: Math.round(totalRiskImpact * 0.8 * mitigationFactor),
-      value_at_risk_95: Math.round(totalRiskImpact * 1.1 * mitigationFactor),
-      conditional_var: Math.round(totalRiskImpact * 1.4 * mitigationFactor),
-      security_roi: Math.max(0, 15 + (defenseComponents.length * 10) - (riskComponents.length * 5)),
-      risk_score: Math.min(95, 25 + (riskComponents.length * 15) - (defenseComponents.length * 8)),
-      risk_distribution: {
-        low: Math.max(5, 35 - (riskComponents.length * 5)),
-        medium: Math.max(10, 45 - (riskComponents.length * 3)),
-        high: Math.min(40, 15 + (riskComponents.length * 7)),
-        critical: Math.min(25, 5 + (riskComponents.length * 3))
-      },
-      confidence_intervals: {
-        p50: { lower: Math.round(totalRiskImpact * 0.5 * mitigationFactor), upper: Math.round(totalRiskImpact * 0.7 * mitigationFactor) },
-        p90: { lower: Math.round(totalRiskImpact * 1.0 * mitigationFactor), upper: Math.round(totalRiskImpact * 1.4 * mitigationFactor) }
-      },
-      components_analyzed: {
-        risk_events: riskComponents.length,
-        business_assets: assetComponents.length,
-        defense_systems: defenseComponents.length
-      },
-      generated_at: new Date().toISOString()
-    };
-
-    setMonteCarloResults(results);
-    setShowMonteCarloModal(true);
-  };
-
+  // Calculate progress and metrics
   const progress = Math.min(Math.floor((components.length / 6) * 100), 100);
   const completedSteps = Math.min(Math.floor(components.length / 2), 4);
 
-  // Calculate P50 and P90 estimates
-  const riskComponents = components.filter(c => c.type === 'risk');
+  const riskComponents = components.filter(c => c.type === 'event');
+  const assetComponents = components.filter(c => c.type === 'asset');
+  const defenseComponents = components.filter(c => c.type === 'defense');
+
   const p50Impact = riskComponents.length > 0 ? 
-    Math.round(riskComponents.reduce((sum, r) => sum + (r.data.impact * r.data.likelihood / 100), 0) * 0.5 / 1000) + 'K' : 
+    Math.round(riskComponents.reduce((sum, r) => sum + ((r.severity || r.severityUsd || 0) * (r.likelihood || 0)), 0) * 0.5 / 1000) + 'K' : 
     '---';
+    
   const p90Impact = riskComponents.length > 0 ? 
-    Math.round(riskComponents.reduce((sum, r) => sum + r.data.impact, 0) * 0.9 / 1000) + 'K' : 
+    Math.round(riskComponents.reduce((sum, r) => sum + (r.severity || r.severityUsd || 0), 0) * 0.9 / 1000) + 'K' : 
     '---';
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="w-8 h-8 animate-spin text-blue-500 mx-auto mb-4" />
+          <p className="text-white">Loading scenario...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen bg-gray-900 flex">
@@ -1294,30 +1613,39 @@ const ScenarioCanvasReplica = () => {
       <RiskEventModal
         isOpen={showRiskModal}
         onClose={() => {
-          setShowRiskModal(false)
-          setDroppedComponent(null) // Clear dropped component if modal is closed without saving
+          setShowRiskModal(false);
+          setEditingComponent(null);
+          setDroppedComponent(null);
         }}
-        onSave={addRiskEvent}
+        onSave={editingComponent ? updateComponent : addComponent}
+        initialData={editingComponent}
       />
+      
       <BusinessAssetModal
         isOpen={showAssetModal}
         onClose={() => {
-          setShowAssetModal(false)
-          setDroppedComponent(null) // Clear dropped component if modal is closed without saving
+          setShowAssetModal(false);
+          setEditingComponent(null);
+          setDroppedComponent(null);
         }}
-        onSave={addBusinessAsset}
+        onSave={editingComponent ? updateComponent : addComponent}
+        initialData={editingComponent}
       />
+      
       <DefenseSystemModal
         isOpen={showDefenseModal}
         onClose={() => {
-          setShowDefenseModal(false)
-          setDroppedComponent(null) // Clear dropped component if modal is closed without saving
+          setShowDefenseModal(false);
+          setEditingComponent(null);
+          setDroppedComponent(null);
         }}
-        onSave={addDefenseSystem}
+        onSave={editingComponent ? updateComponent : addComponent}
+        initialData={editingComponent}
       />
+      
       <MonteCarloResultsModal
         results={monteCarloResults}
-        scenarioName="Q4 Cyber Assessment"
+        scenarioName={scenario?.name || 'Risk Analysis'}
         onClose={() => setShowMonteCarloModal(false)}
       />
 
@@ -1328,32 +1656,43 @@ const ScenarioCanvasReplica = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button 
-                onClick={() => window.history.back()}
+                onClick={() => navigate('/scenarios')}
                 className="text-gray-400 hover:text-white transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div>
-                <h1 className="text-xl font-bold text-white">Q4 Cyber Assessment</h1>
+                <h1 className="text-xl font-bold text-white">{scenario?.name || 'New Scenario'}</h1>
                 <div className="flex items-center space-x-2 text-sm text-gray-400">
-                  <span>No description</span>
+                  <span>{scenario?.description || 'No description'}</span>
                   <span className="w-1 h-1 bg-green-400 rounded-full"></span>
-                  <span>Auto-saved</span>
+                  <span>{saving ? 'Saving...' : 'Auto-saved'}</span>
                 </div>
               </div>
             </div>
+            
             <div className="flex items-center space-x-3">
-              <button className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg flex items-center space-x-2">
-                <Save className="w-4 h-4" />
+              <button 
+                onClick={saveScenario}
+                disabled={saving}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg flex items-center space-x-2 disabled:opacity-50"
+              >
+                {saving ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 <span>Save</span>
               </button>
+              
               <button className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg flex items-center space-x-2">
                 <Share className="w-4 h-4" />
                 <span>Share</span>
               </button>
-              <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center space-x-2">
-                <Play className="w-4 h-4" />
-                <span>Run Scenario</span>
+              
+              <button 
+                onClick={runMonteCarloAnalysis}
+                disabled={runningAnalysis || components.length === 0}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center space-x-2 disabled:opacity-50"
+              >
+                {runningAnalysis ? <Loader className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                <span>Run Analysis</span>
               </button>
             </div>
           </div>
@@ -1365,7 +1704,7 @@ const ScenarioCanvasReplica = () => {
             <div>
               <h2 className="text-lg font-semibold text-white">Scenario Canvas</h2>
               <div className="flex items-center space-x-4 text-sm text-gray-400">
-                <span>open</span>
+                <span>{scenario?.status || 'draft'}</span>
                 <span>Preview:</span>
                 <span className="text-orange-400">P50 {p50Impact}</span>
                 <span className="text-orange-400">P90 {p90Impact}</span>
@@ -1378,6 +1717,22 @@ const ScenarioCanvasReplica = () => {
           </div>
         </div>
 
+        {/* Error Display */}
+        {error && (
+          <div className="mx-6 mt-4 p-4 bg-red-900/50 border border-red-500 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="w-5 h-5 text-red-400" />
+              <p className="text-red-300">{error}</p>
+              <button 
+                onClick={() => setError(null)}
+                className="ml-auto text-red-400 hover:text-red-300"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Main Content Area */}
         <div className="flex-1 p-6">
           {/* Impact Analysis Section */}
@@ -1389,7 +1744,9 @@ const ScenarioCanvasReplica = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-white">Impact Analysis</h3>
-                  <p className="text-sm text-gray-400">Complete all actions to run full analysis</p>
+                  <p className="text-sm text-gray-400">
+                    {components.length === 0 ? 'Add components to begin analysis' : 'Complete setup to run full analysis'}
+                  </p>
                 </div>
               </div>
               <div className="text-right">
@@ -1415,10 +1772,10 @@ const ScenarioCanvasReplica = () => {
             {/* Action Steps */}
             <div className="grid grid-cols-4 gap-4 mb-6">
               {[
-                { label: 'Validate Components', completed: components.length > 0 },
-                { label: 'Verify Connections', completed: connections.length > 0 },
-                { label: 'Configure Parameters', completed: components.length >= 3 },
-                { label: 'Review Scenario', completed: components.length >= 4 }
+                { label: 'Add Components', completed: components.length > 0, count: components.length },
+                { label: 'Create Connections', completed: connections.length > 0, count: connections.length },
+                { label: 'Configure Parameters', completed: components.length >= 3, count: riskComponents.length },
+                { label: 'Ready for Analysis', completed: components.length >= 4 && riskComponents.length > 0, count: defenseComponents.length }
               ].map((step, index) => (
                 <div key={index} className={`rounded-lg p-4 border-2 text-left ${
                   step.completed 
@@ -1434,10 +1791,10 @@ const ScenarioCanvasReplica = () => {
                     </span>
                   </div>
                   <p className={`text-xs ${step.completed ? 'text-gray-200' : 'text-gray-400'}`}>
-                    {step.label.includes('Components') ? 'Ensure all scenario compo...' :
-                     step.label.includes('Connections') ? 'Validate that components...' :
-                     step.label.includes('Parameters') ? 'Set Monte Carlo simulatio...' :
-                     'Perform a final review of t...'}
+                    {step.label.includes('Components') ? `${step.count} components added` :
+                     step.label.includes('Connections') ? `${step.count} connections made` :
+                     step.label.includes('Parameters') ? `${step.count} risk events configured` :
+                     `${step.count} defense systems ready`}
                   </p>
                 </div>
               ))}
@@ -1445,11 +1802,20 @@ const ScenarioCanvasReplica = () => {
 
             <button 
               onClick={runMonteCarloAnalysis}
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2"
-              disabled={components.length === 0}
+              disabled={runningAnalysis || components.length === 0 || riskComponents.length === 0}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <BarChart3 className="w-5 h-5" />
-              <span>Run Full Impact Analysis</span>
+              {runningAnalysis ? (
+                <>
+                  <Loader className="w-5 h-5 animate-spin" />
+                  <span>Running Analysis...</span>
+                </>
+              ) : (
+                <>
+                  <BarChart3 className="w-5 h-5" />
+                  <span>Run Full Impact Analysis</span>
+                </>
+              )}
             </button>
           </div>
 
@@ -1457,49 +1823,45 @@ const ScenarioCanvasReplica = () => {
           <div
             className="bg-gray-800 rounded-lg flex-1 relative overflow-hidden min-h-[500px] border-2 border-dashed border-transparent transition-colors"
             onDragOver={(e) => {
-              e.preventDefault()
-              e.currentTarget.classList.add('border-blue-400', 'bg-blue-500/10')
-              const dropHint = e.currentTarget.querySelector('.drop-hint')
-              if (dropHint) dropHint.style.opacity = '1'
+              e.preventDefault();
+              e.currentTarget.classList.add('border-blue-400', 'bg-blue-500/10');
+              const dropHint = e.currentTarget.querySelector('.drop-hint');
+              if (dropHint) dropHint.style.opacity = '1';
             }}
             onDragLeave={(e) => {
-              e.preventDefault()
-              e.currentTarget.classList.remove('border-blue-400', 'bg-blue-500/10')
-              const dropHint = e.currentTarget.querySelector('.drop-hint')
-              if (dropHint) dropHint.style.opacity = '0'
+              e.preventDefault();
+              e.currentTarget.classList.remove('border-blue-400', 'bg-blue-500/10');
+              const dropHint = e.currentTarget.querySelector('.drop-hint');
+              if (dropHint) dropHint.style.opacity = '0';
             }}
             onDrop={(e) => {
-              e.preventDefault()
-              e.currentTarget.classList.remove('border-blue-400', 'bg-blue-500/10')
-              const dropHint = e.currentTarget.querySelector('.drop-hint')
-              if (dropHint) dropHint.style.opacity = '0'
+              e.preventDefault();
+              e.currentTarget.classList.remove('border-blue-400', 'bg-blue-500/10');
+              const dropHint = e.currentTarget.querySelector('.drop-hint');
+              if (dropHint) dropHint.style.opacity = '0';
 
               try {
-                const data = JSON.parse(e.dataTransfer.getData('application/json'))
-                const rect = e.currentTarget.getBoundingClientRect()
-                const x = e.clientX - rect.left
-                const y = e.clientY - rect.top
+                const data = JSON.parse(e.dataTransfer.getData('application/json'));
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
 
-                // Create a temporary component for the dropped item
-                const tempComponent = {
+                // Store the drop position
+                setDroppedComponent({
                   ...data,
-                  id: `temp-${Date.now()}`,
                   position: { x, y }
-                }
-
-                // Store the drop position and component data
-                setDroppedComponent(tempComponent)
+                });
 
                 // Open the appropriate modal based on the type
                 if (data.type === 'risk_event') {
-                  setShowRiskModal(true)
+                  setShowRiskModal(true);
                 } else if (data.type === 'business_asset') {
-                  setShowAssetModal(true)
+                  setShowAssetModal(true);
                 } else if (data.type === 'defense_system') {
-                  setShowDefenseModal(true)
+                  setShowDefenseModal(true);
                 }
               } catch (error) {
-                console.error('Error parsing dropped data:', error)
+                console.error('Error parsing dropped data:', error);
               }
             }}
           >
@@ -1552,7 +1914,7 @@ const ScenarioCanvasReplica = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      // Edit component logic here
+                      editComponent(component);
                     }}
                     className="w-5 h-5 bg-gray-600 hover:bg-gray-700 rounded-full flex items-center justify-center text-white"
                     title="Edit"
@@ -1562,7 +1924,9 @@ const ScenarioCanvasReplica = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      deleteComponent(component.id);
+                      if (window.confirm(`Delete "${component.name}"?`)) {
+                        deleteComponent(component.id);
+                      }
                     }}
                     className="w-5 h-5 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-white"
                     title="Delete"
@@ -1600,7 +1964,7 @@ const ScenarioCanvasReplica = () => {
                   style={{ width: `${progress}%` }}
                 ></div>
               </div>
-              <p className="text-xs text-gray-400 mt-1">{components.length} components added</p>
+              <p className="text-xs text-gray-400 mt-1">{components.length} components</p>
             </div>
 
             {/* Empty state */}
@@ -1647,7 +2011,30 @@ const ScenarioCanvasReplica = () => {
             <p className="text-sm text-gray-400">Drag components onto the canvas to build your scenario</p>
           </div>
 
-          {/* Risk Events */}
+          {/* Component Statistics */}
+          <div className="bg-gray-700 rounded-lg p-4 mb-6">
+            <h3 className="text-white font-medium mb-3">Current Setup</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-300">Risk Events:</span>
+                <span className="text-red-400 font-medium">{riskComponents.length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-300">Business Assets:</span>
+                <span className="text-blue-400 font-medium">{assetComponents.length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-300">Defense Systems:</span>
+                <span className="text-green-400 font-medium">{defenseComponents.length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-300">Connections:</span>
+                <span className="text-purple-400 font-medium">{connections.length}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Risk Events Section */}
           <div className="mb-6">
             <button
               onClick={() => setSidebarSections(prev => ({ ...prev, riskEvents: !prev.riskEvents }))}
@@ -1658,90 +2045,43 @@ const ScenarioCanvasReplica = () => {
             </button>
             {sidebarSections.riskEvents && (
               <div className="space-y-3">
-                <div
-                  draggable="true"
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData('application/json', JSON.stringify({
-                      type: 'risk_event',
-                      subtype: 'cyber_attack',
-                      name: 'Cyber Attack',
-                      description: 'Ransomware, data breaches'
-                    }))
-                    e.dataTransfer.effectAllowed = 'copy'
-                  }}
-                  onClick={() => setShowRiskModal(true)}
-                  className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600 cursor-move"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Zap className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-medium text-sm text-white">Add Cyber Attack</div>
-                      <div className="text-xs text-gray-400">Ransomware, data breaches</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  draggable="true"
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData('application/json', JSON.stringify({
-                      type: 'risk_event',
-                      subtype: 'supply_disruption',
-                      name: 'Supply Disruption',
-                      description: 'Supplier failures, logistics'
-                    }))
-                    e.dataTransfer.effectAllowed = 'copy'
-                  }}
-                  onClick={() => setShowRiskModal(true)}
-                  className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600 cursor-move"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Truck className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-medium text-sm text-white">Add Supply Disruption</div>
-                      <div className="text-xs text-gray-400">Supplier failures, logistics</div>
+                {[
+                  { name: 'Cyber Attack', desc: 'Ransomware, data breaches', icon: Zap, type: 'cyber_attack' },
+                  { name: 'Supply Disruption', desc: 'Supplier failures, logistics', icon: Truck, type: 'supply_disruption' },
+                  { name: 'Operational Risk', desc: 'Process failures, human errors', icon: AlertTriangle, type: 'operational_risk' },
+                  { name: 'Legal Action', desc: 'Lawsuits, regulatory issues', icon: Scale, type: 'legal_action' }
+                ].map((item, index) => (
+                  <div
+                    key={index}
+                    draggable="true"
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('application/json', JSON.stringify({
+                        type: 'risk_event',
+                        subtype: item.type,
+                        name: item.name,
+                        description: item.desc
+                      }));
+                      e.dataTransfer.effectAllowed = 'copy';
+                    }}
+                    onClick={() => setShowRiskModal(true)}
+                    className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600 cursor-move"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <item.icon className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-sm text-white">Add {item.name}</div>
+                        <div className="text-xs text-gray-400">{item.desc}</div>
+                      </div>
                     </div>
                   </div>
-                </div>
-
-                <button
-                  onClick={() => setShowRiskModal(true)}
-                  className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <AlertTriangle className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-medium text-sm text-white">Add Operational Risk</div>
-                      <div className="text-xs text-gray-400">Process failures, human errors</div>
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => setShowRiskModal(true)}
-                  className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Scale className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-medium text-sm text-white">Add Legal Action</div>
-                      <div className="text-xs text-gray-400">Lawsuits, regulatory issues</div>
-                    </div>
-                  </div>
-                </button>
+                ))}
               </div>
             )}
           </div>
 
-          {/* Business Assets */}
+          {/* Business Assets Section */}
           <div className="mb-6">
             <button
               onClick={() => setSidebarSections(prev => ({ ...prev, businessAssets: !prev.businessAssets }))}
@@ -1752,112 +2092,43 @@ const ScenarioCanvasReplica = () => {
             </button>
             {sidebarSections.businessAssets && (
               <div className="space-y-3">
-  <div
-    draggable="true"
-    onDragStart={(e) => {
-      e.dataTransfer.setData('application/json', JSON.stringify({
-        type: 'business_asset',
-        subtype: 'critical_system',
-        name: 'Critical System',
-        description: 'IT infrastructure, databases'
-      }))
-      e.dataTransfer.effectAllowed = 'copy'
-    }}
-    onClick={() => setShowAssetModal(true)}
-    className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600 cursor-move"
-  >
-    <div className="flex items-center space-x-3">
-      <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
-        <Building2 className="w-4 h-4 text-white" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="font-medium text-sm text-white">Add Critical System</div>
-        <div className="text-xs text-gray-400">IT infrastructure, databases</div>
-      </div>
-    </div>
-  </div>
-
-  <button
-    onClick={() => setShowAssetModal(true)}
-    className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600"
-  >
-    <div className="flex items-center space-x-3">
-      <div className="w-8 h-8 bg-blue-400 rounded-lg flex items-center justify-center flex-shrink-0">
-        <MapPin className="w-4 h-4 text-white" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="font-medium text-sm text-white">Add Business Location</div>
-        <div className="text-xs text-gray-400">Offices, plants</div>
-      </div>
-    </div>
-  </button>
-
-  <button
-    onClick={() => setShowAssetModal(true)}
-    className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600"
-  >
-    <div className="flex items-center space-x-3">
-      <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-        <Database className="w-4 h-4 text-white" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="font-medium text-sm text-white">Add Data Asset</div>
-        <div className="text-xs text-gray-400">Customer data, IP</div>
-      </div>
-    </div>
-  </button>
-
-  <button
-    onClick={() => setShowAssetModal(true)}
-    className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600"
-  >
-    <div className="flex items-center space-x-3">
-      <div className="w-8 h-8 bg-blue-700 rounded-lg flex items-center justify-center flex-shrink-0">
-        <Users className="w-4 h-4 text-white" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="font-medium text-sm text-white">Add Key Personnel</div>
-        <div className="text-xs text-gray-400">Critical staff, expertise</div>
-      </div>
-    </div>
-  </button>
-
-  {/* ✅ Your extra two buttons go INSIDE the same wrapper */}
-  <button
-    onClick={() => setShowAssetModal(true)}
-    className="w-full bg-blue-700 hover:bg-blue-800 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-blue-600/30"
-  >
-    <div className="flex items-center space-x-3">
-      <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-        <Database className="w-4 h-4 text-white" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="font-medium text-sm text-white">Add Data Asset</div>
-        <div className="text-xs text-blue-100 opacity-90">Customer data, IP</div>
-      </div>
-    </div>
-  </button>
-
-  <button
-    onClick={() => setShowAssetModal(true)}
-    className="w-full bg-blue-800 hover:bg-blue-900 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-blue-700/30"
-  >
-    <div className="flex items-center space-x-3">
-      <div className="w-8 h-8 bg-blue-700 rounded-lg flex items-center justify-center flex-shrink-0">
-        <Users className="w-4 h-4 text-white" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="font-medium text-sm text-white">Add Key Personnel</div>
-        <div className="text-xs text-blue-100 opacity-90">Critical staff, expertise</div>
-      </div>
-    </div>
-  </button>
-</div>
-
+                {[
+                  { name: 'Critical System', desc: 'IT infrastructure, databases', icon: Building2, type: 'critical_system' },
+                  { name: 'Business Location', desc: 'Offices, plants', icon: MapPin, type: 'business_location' },
+                  { name: 'Data Asset', desc: 'Customer data, IP', icon: Database, type: 'data_asset' },
+                  { name: 'Key Personnel', desc: 'Critical staff, expertise', icon: Users, type: 'key_personnel' }
+                ].map((item, index) => (
+                  <div
+                    key={index}
+                    draggable="true"
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('application/json', JSON.stringify({
+                        type: 'business_asset',
+                        subtype: item.type,
+                        name: item.name,
+                        description: item.desc
+                      }));
+                      e.dataTransfer.effectAllowed = 'copy';
+                    }}
+                    onClick={() => setShowAssetModal(true)}
+                    className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600 cursor-move"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <item.icon className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-sm text-white">Add {item.name}</div>
+                        <div className="text-xs text-gray-400">{item.desc}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 
-          {/* Defense Systems */}
+          {/* Defense Systems Section */}
           <div className="mb-6">
             <button
               onClick={() => setSidebarSections(prev => ({ ...prev, defenseSystems: !prev.defenseSystems }))}
@@ -1868,75 +2139,38 @@ const ScenarioCanvasReplica = () => {
             </button>
             {sidebarSections.defenseSystems && (
               <div className="space-y-3">
-                <div
-                  draggable="true"
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData('application/json', JSON.stringify({
-                      type: 'defense_system',
-                      subtype: 'security_control',
-                      name: 'Security Control',
-                      description: 'Firewalls, monitoring'
-                    }))
-                    e.dataTransfer.effectAllowed = 'copy'
-                  }}
-                  onClick={() => setShowDefenseModal(true)}
-                  className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600 cursor-move"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Shield className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-medium text-sm text-white">Add Security Control</div>
-                      <div className="text-xs text-gray-400">Firewalls, monitoring</div>
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => setShowDefenseModal(true)}
-                  className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-green-400 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <RotateCcw className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-medium text-sm text-white">Add Business Continuity</div>
-                      <div className="text-xs text-gray-400">DR, redundancy</div>
+                {[
+                  { name: 'Security Control', desc: 'Firewalls, monitoring', icon: Shield, type: 'security_control' },
+                  { name: 'Business Continuity', desc: 'DR, redundancy', icon: RotateCcw, type: 'business_continuity' },
+                  { name: 'Insurance Coverage', desc: 'Risk transfer, coverage', icon: FileText, type: 'insurance_coverage' },
+                  { name: 'Backup Systems', desc: 'Data backup, recovery', icon: HardDrive, type: 'backup_systems' }
+                ].map((item, index) => (
+                  <div
+                    key={index}
+                    draggable="true"
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('application/json', JSON.stringify({
+                        type: 'defense_system',
+                        subtype: item.type,
+                        name: item.name,
+                        description: item.desc
+                      }));
+                      e.dataTransfer.effectAllowed = 'copy';
+                    }}
+                    onClick={() => setShowDefenseModal(true)}
+                    className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600 cursor-move"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <item.icon className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-sm text-white">Add {item.name}</div>
+                        <div className="text-xs text-gray-400">{item.desc}</div>
+                      </div>
                     </div>
                   </div>
-                </button>
-
-                <button
-                  onClick={() => setShowDefenseModal(true)}
-                  className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <FileText className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-medium text-sm text-white">Add Insurance Coverage</div>
-                      <div className="text-xs text-gray-400">Risk transfer, coverage</div>
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => setShowDefenseModal(true)}
-                  className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-4 text-left transition-all hover:scale-[1.02] border border-gray-600"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-green-700 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <HardDrive className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-medium text-sm text-white">Add Backup Systems</div>
-                      <div className="text-xs text-gray-400">Data backup, recovery</div>
-                    </div>
-                  </div>
-                </button>
+                ))}
               </div>
             )}
           </div>
@@ -1960,6 +2194,20 @@ const ScenarioCanvasReplica = () => {
                 <span>⚙ Components</span>
                 <span className="text-cyan-400 font-medium">{components.length}</span>
               </div>
+              <div className="flex justify-between text-gray-300">
+                <span>🔗 Connections</span>
+                <span className="text-purple-400 font-medium">{connections.length}</span>
+              </div>
+              {monteCarloResults && (
+                <div className="pt-2 border-t border-gray-600">
+                  <button
+                    onClick={() => setShowMonteCarloModal(true)}
+                    className="w-full text-left text-xs text-green-400 hover:text-green-300 transition-colors"
+                  >
+                    ✓ Analysis results available
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1992,10 +2240,12 @@ const ScenarioCanvasReplica = () => {
               </button>
             </div>
             <div className="p-4">
-              {/* Mobile content - same as sidebar but condensed */}
               <div className="space-y-4">
                 <button
-                  onClick={() => { setShowRiskModal(true); setSidebarSections(prev => ({ ...prev, mobileOpen: false })); }}
+                  onClick={() => { 
+                    setShowRiskModal(true); 
+                    setSidebarSections(prev => ({ ...prev, mobileOpen: false })); 
+                  }}
                   className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-3 text-left"
                 >
                   <div className="flex items-center space-x-3">
@@ -2006,7 +2256,10 @@ const ScenarioCanvasReplica = () => {
                   </div>
                 </button>
                 <button
-                  onClick={() => { setShowAssetModal(true); setSidebarSections(prev => ({ ...prev, mobileOpen: false })); }}
+                  onClick={() => { 
+                    setShowAssetModal(true); 
+                    setSidebarSections(prev => ({ ...prev, mobileOpen: false })); 
+                  }}
                   className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-3 text-left"
                 >
                   <div className="flex items-center space-x-3">
@@ -2017,7 +2270,10 @@ const ScenarioCanvasReplica = () => {
                   </div>
                 </button>
                 <button
-                  onClick={() => { setShowDefenseModal(true); setSidebarSections(prev => ({ ...prev, mobileOpen: false })); }}
+                  onClick={() => { 
+                    setShowDefenseModal(true); 
+                    setSidebarSections(prev => ({ ...prev, mobileOpen: false })); 
+                  }}
                   className="w-full bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-3 text-left"
                 >
                   <div className="flex items-center space-x-3">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { 
   TrendingUp, 
   Activity, 
@@ -19,6 +20,7 @@ import {
   Building
 } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
+import { scenariosAPI, eventsAPI, defensesAPI, dashboardAPI } from '../services/api'
 
 // Theme Toggle Button Component
 const ThemeToggle = () => {
@@ -45,8 +47,9 @@ const ThemeToggle = () => {
   )
 }
 
-// Dashboard Component with Theme Integration
+// Dashboard Component with Real API Integration
 const Dashboard = () => {
+  const navigate = useNavigate()
   const [scenarios, setScenarios] = useState([])
   const { themeClasses, isDarkMode } = useTheme()
   const [defenseStats, setDefenseStats] = useState({})
@@ -62,52 +65,6 @@ const Dashboard = () => {
     defenseCoverage: 0
   })
 
-  // Sample data
-  const sampleScenarios = [
-    {
-      id: '1',
-      name: 'Advanced Persistent Threat - Financial Systems',
-      status: 'active',
-      risk_score: 85,
-      updated_at: '2024-08-15T10:30:00Z'
-    },
-    {
-      id: '2',
-      name: 'Supply Chain Ransomware Attack',
-      status: 'active',
-      risk_score: 72,
-      updated_at: '2024-08-14T16:45:00Z'
-    },
-    {
-      id: '3',
-      name: 'Data Center Natural Disaster Recovery',
-      status: 'draft',
-      risk_score: 45,
-      updated_at: '2024-08-13T09:15:00Z'
-    },
-    {
-      id: '4',
-      name: 'Third-Party Vendor Breach Simulation',
-      status: 'completed',
-      risk_score: 38,
-      updated_at: '2024-08-12T14:20:00Z'
-    },
-    {
-      id: '5',
-      name: 'IoT Device Network Compromise',
-      status: 'active',
-      risk_score: 67,
-      updated_at: '2024-08-11T11:30:00Z'
-    }
-  ]
-
-  const sampleEvents = [
-    { id: '1', category: 'cyber_security', severity: 'critical', risk_score: 90 },
-    { id: '2', category: 'operational', severity: 'high', risk_score: 75 },
-    { id: '3', category: 'financial', severity: 'medium', risk_score: 45 },
-    { id: '4', category: 'regulatory', severity: 'low', risk_score: 25 }
-  ]
-
   useEffect(() => {
     loadDashboardData()
   }, [])
@@ -117,47 +74,205 @@ const Dashboard = () => {
       setLoading(true)
       setError(null)
       
-      // Set sample data for demo
-      setScenarios(sampleScenarios)
-      setEvents(sampleEvents)
+      console.log('Loading fresh dashboard data...')
       
-      // Calculate stats with sample data
-      calculateStats(sampleScenarios, {}, sampleEvents, [])
+      // Clear existing data first to avoid showing stale data
+      setScenarios([])
+      setEvents([])
+      setDefenses([])
+      setDefenseStats({})
+      setStats({
+        totalRiskScore: 0,
+        activeScenarios: 0,
+        criticalVulnerabilities: 0,
+        defenseCoverage: 0
+      })
+      
+      // Load all data in parallel
+      const [
+        scenariosResponse,
+        eventsResponse,
+        defensesResponse,
+        defenseStatsResponse,
+        dashboardOverviewResponse
+      ] = await Promise.allSettled([
+        scenariosAPI.getAll(),
+        eventsAPI.getAll(),
+        defensesAPI.getAll(),
+        defensesAPI.getStats(),
+        dashboardAPI.getOverview()
+      ])
+
+      // Handle scenarios data
+      let scenariosData = []
+      if (scenariosResponse.status === 'fulfilled') {
+        const rawData = scenariosResponse.value
+        scenariosData = Array.isArray(rawData) 
+          ? rawData 
+          : rawData?.data || rawData?.scenarios || []
+        setScenarios(scenariosData)
+        console.log('Loaded scenarios:', scenariosData.length)
+      } else {
+        console.warn('Failed to load scenarios:', scenariosResponse.reason?.message)
+        setScenarios([])
+      }
+
+      // Handle events data
+      let eventsData = []
+      if (eventsResponse.status === 'fulfilled') {
+        const rawData = eventsResponse.value
+        eventsData = Array.isArray(rawData) 
+          ? rawData 
+          : rawData?.data || rawData?.events || []
+        setEvents(eventsData)
+        console.log('Loaded events:', eventsData.length)
+      } else {
+        console.warn('Failed to load events:', eventsResponse.reason?.message)
+        setEvents([])
+      }
+
+      // Handle defenses data
+      let defensesData = []
+      if (defensesResponse.status === 'fulfilled') {
+        const rawData = defensesResponse.value
+        defensesData = Array.isArray(rawData) 
+          ? rawData 
+          : rawData?.data || rawData?.defenses || []
+        setDefenses(defensesData)
+        console.log('Loaded defenses:', defensesData.length)
+      } else {
+        console.warn('Failed to load defenses:', defensesResponse.reason?.message)
+        setDefenses([])
+      }
+
+      // Handle defense stats
+      let defenseStatsData = {}
+      if (defenseStatsResponse.status === 'fulfilled') {
+        defenseStatsData = defenseStatsResponse.value || {}
+        setDefenseStats(defenseStatsData)
+      } else {
+        console.warn('Failed to load defense stats:', defenseStatsResponse.reason?.message)
+        setDefenseStats({})
+      }
+
+      // Use dashboard overview if available, otherwise calculate from individual data
+      if (dashboardOverviewResponse.status === 'fulfilled' && dashboardOverviewResponse.value) {
+        const overview = dashboardOverviewResponse.value
+        console.log('Using dashboard overview data:', overview)
+        setStats({
+          totalRiskScore: overview.total_risk_score || 0,
+          activeScenarios: overview.active_scenarios || 0,
+          criticalVulnerabilities: overview.critical_vulnerabilities || 0,
+          defenseCoverage: overview.defense_coverage || 0
+        })
+      } else {
+        console.log('Calculating stats from individual data sources')
+        calculateStats(scenariosData, defenseStatsData, eventsData, defensesData)
+      }
       
     } catch (error) {
       console.error('Error loading dashboard data:', error)
-      setError('Failed to load some dashboard data')
-      calculateStats([], {}, [], [])
+      setError('Failed to load dashboard data. Please try again.')
+      // Reset all data to empty state on error
+      setScenarios([])
+      setEvents([])
+      setDefenses([])
+      setDefenseStats({})
+      setStats({
+        totalRiskScore: 0,
+        activeScenarios: 0,
+        criticalVulnerabilities: 0,
+        defenseCoverage: 0
+      })
     } finally {
       setLoading(false)
     }
   }
 
   const calculateStats = (scenariosData, defenseStatsData, eventsData, defensesData) => {
-    // Active scenarios count
-    const activeCount = scenariosData.filter(s => s.status === 'active').length
-    
-    // Calculate average risk score from scenarios
-    const avgRiskScore = scenariosData.length > 0 
-      ? scenariosData.reduce((sum, s) => sum + (parseFloat(s.risk_score) || 0), 0) / scenariosData.length 
-      : 0
-    
-    // Count critical vulnerabilities from events
-    const criticalEvents = eventsData.filter(e => {
-      const severity = (e.severity || '').toLowerCase()
-      const riskScore = parseFloat(e.risk_score) || 0
-      return severity === 'critical' || severity === 'high' || riskScore > 70
-    }).length
-    
-    // Defense coverage from stats or calculate from defenses
-    let defenseCoverage = 85.5 // Sample value
-    
-    setStats({
-      totalRiskScore: Math.round(avgRiskScore * 10) / 10,
-      activeScenarios: activeCount,
-      criticalVulnerabilities: criticalEvents,
-      defenseCoverage: Math.round(defenseCoverage * 10) / 10
-    })
+    try {
+      console.log('Calculating stats with data:', {
+        scenarios: scenariosData.length,
+        events: eventsData.length,
+        defenses: defensesData.length,
+        sampleScenario: scenariosData[0]
+      })
+
+      // Active scenarios count
+      const activeCount = scenariosData.filter(s => 
+        (s.status || '').toLowerCase() === 'active'
+      ).length
+      
+      // Calculate average risk score from ALL scenarios (not just active ones)
+      let avgRiskScore = 0
+      if (scenariosData.length > 0) {
+        const validScenarios = scenariosData.filter(s => {
+          const riskScore = parseFloat(s.risk_score || s.riskScore || 0)
+          return !isNaN(riskScore) && riskScore > 0
+        })
+        
+        if (validScenarios.length > 0) {
+          const totalRisk = validScenarios.reduce((sum, s) => {
+            const riskScore = parseFloat(s.risk_score || s.riskScore || 0)
+            console.log(`Scenario "${s.name}" risk score:`, riskScore)
+            return sum + riskScore
+          }, 0)
+          avgRiskScore = totalRisk / validScenarios.length
+        }
+      }
+      
+      // Count critical vulnerabilities from events
+      const criticalEvents = eventsData.filter(e => {
+        const severity = (e.severity || '').toLowerCase()
+        const riskScore = parseFloat(e.risk_score || e.riskScore || 0)
+        return severity === 'critical' || severity === 'high' || riskScore > 70
+      }).length
+      
+      // Defense coverage calculation - more realistic approach
+      let defenseCoverage = 0
+      if (defenseStatsData.coverage_percentage !== undefined) {
+        defenseCoverage = defenseStatsData.coverage_percentage
+      } else if (defenseStatsData.defense_coverage !== undefined) {
+        defenseCoverage = defenseStatsData.defense_coverage
+      } else {
+        // Calculate based on scenarios and defenses
+        if (defensesData.length > 0) {
+          // Each defense system provides coverage
+          defenseCoverage = Math.min(defensesData.length * 25, 95) // Each defense = 25% coverage, max 95%
+        } else if (scenariosData.length > 0) {
+          // Base coverage calculation - assume some baseline security
+          const completedScenarios = scenariosData.filter(s => 
+            (s.status || '').toLowerCase() === 'completed'
+          ).length
+          const totalScenarios = scenariosData.length
+          
+          // Base coverage of 30% + additional coverage based on completed scenarios
+          defenseCoverage = 30 + (completedScenarios / totalScenarios) * 40
+        } else {
+          defenseCoverage = 25 // Minimum baseline coverage
+        }
+      }
+
+      const calculatedStats = {
+        totalRiskScore: Math.round(avgRiskScore * 10) / 10,
+        activeScenarios: activeCount,
+        criticalVulnerabilities: criticalEvents,
+        defenseCoverage: Math.round(defenseCoverage * 10) / 10
+      }
+
+      console.log('Final calculated stats:', calculatedStats)
+
+      setStats(calculatedStats)
+      
+    } catch (error) {
+      console.error('Error calculating stats:', error)
+      setStats({
+        totalRiskScore: 0,
+        activeScenarios: 0,
+        criticalVulnerabilities: 0,
+        defenseCoverage: 0
+      })
+    }
   }
 
   const getRelativeTimeString = (dateString) => {
@@ -181,17 +296,17 @@ const Dashboard = () => {
 
   // Calculate risk distribution from real events data
   const riskDistribution = React.useMemo(() => {
+    console.log('Calculating risk distribution with events:', events.length)
+    
     if (events.length === 0) {
+      console.log('No events found, showing no data state')
       return [
-        { name: 'Cyber Threats', value: 34, color: 'bg-red-500' },
-        { name: 'Operational', value: 28, color: 'bg-orange-500' },
-        { name: 'Financial', value: 22, color: 'bg-yellow-500' },
-        { name: 'Regulatory', value: 16, color: 'bg-blue-500' },
+        { name: 'No Data Available', value: 100, color: 'bg-gray-500' }
       ]
     }
 
     const categoryCount = events.reduce((acc, event) => {
-      let category = (event.category || 'operational').toLowerCase()
+      let category = (event.category || event.type || 'operational').toLowerCase()
       
       if (category.includes('cyber') || category.includes('security')) {
         category = 'cyber_security'
@@ -215,25 +330,33 @@ const Dashboard = () => {
       { name: 'Regulatory', key: 'regulatory', color: 'bg-blue-500' },
     ]
 
-    return categories.map(cat => ({
-      name: cat.name,
-      value: total > 0 ? Math.round(((categoryCount[cat.key] || 0) / total) * 100) : 0,
-      color: cat.color
-    }))
+    const result = categories
+      .map(cat => ({
+        name: cat.name,
+        value: total > 0 ? Math.round(((categoryCount[cat.key] || 0) / total) * 100) : 0,
+        color: cat.color
+      }))
+      .filter(item => item.value > 0) // Only show categories with data
+
+    console.log('Risk distribution result:', result)
+    return result.length > 0 ? result : [{ name: 'No Data Available', value: 100, color: 'bg-gray-500' }]
   }, [events])
 
   const getStatusColor = (status) => {
-    switch (status) {
+    const statusLower = (status || '').toLowerCase()
+    switch (statusLower) {
       case 'active': return 'bg-green-500'
       case 'draft': return 'bg-yellow-500'
       case 'completed': return 'bg-blue-500'
-      default: return 'bg-gray-500'
+      case 'archived': return 'bg-gray-500'
+      default: return 'bg-gray-400'
     }
   }
 
   const getRiskColor = (riskScore) => {
-    if (riskScore >= 70) return 'text-red-400'
-    if (riskScore >= 40) return 'text-yellow-400'
+    const score = parseFloat(riskScore || 0)
+    if (score >= 70) return 'text-red-400'
+    if (score >= 40) return 'text-yellow-400'
     return 'text-green-400'
   }
 
@@ -290,10 +413,13 @@ const Dashboard = () => {
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 <span>Refresh</span>
               </button>
-              <button className={`
-                flex items-center justify-center space-x-2 px-3 py-2 sm:px-4 rounded-lg transition-colors touch-manipulation min-h-[44px] text-sm sm:text-base
-                ${tc.button.primary}
-              `}>
+              <button 
+                className={`
+                  flex items-center justify-center space-x-2 px-3 py-2 sm:px-4 rounded-lg transition-colors touch-manipulation min-h-[44px] text-sm sm:text-base
+                  ${tc.button.primary}
+                `}
+                onClick={() => navigate('/scenarios/new')}
+              >
                 <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span>New Scenario</span>
               </button>
@@ -307,6 +433,16 @@ const Dashboard = () => {
             <div className="flex items-start space-x-2">
               <AlertTriangle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
               <p className="text-yellow-300 text-sm sm:text-base">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {loading && (
+          <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-blue-900/50 border border-blue-500 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <RefreshCw className="w-5 h-5 text-blue-400 animate-spin flex-shrink-0" />
+              <p className="text-blue-300 text-sm sm:text-base">Loading dashboard data...</p>
             </div>
           </div>
         )}
@@ -383,7 +519,7 @@ const Dashboard = () => {
                 </p>
                 <div className="flex items-center space-x-1">
                   <span className="text-green-400 text-xs sm:text-sm truncate">
-                    5 defense systems
+                    {defenses.length} defense systems
                   </span>
                 </div>
               </div>
@@ -402,7 +538,10 @@ const Dashboard = () => {
             <div className={`${tc.bg.card} border ${tc.border.primary} rounded-lg p-4 sm:p-6`}>
               <div className="flex items-center justify-between mb-4 sm:mb-6">
                 <h2 className={`text-lg sm:text-xl font-bold ${tc.text.primary}`}>Recent Scenarios</h2>
-                <button className={`flex items-center space-x-1 ${tc.text.accent} hover:${tc.text.accent}/80 text-sm sm:text-base transition-colors touch-manipulation`}>
+                <button 
+                  className={`flex items-center space-x-1 ${tc.text.accent} hover:${tc.text.accent}/80 text-sm sm:text-base transition-colors touch-manipulation`}
+                  onClick={() => navigate('/scenarios')}
+                >
                   <span>View All ({scenarios.length})</span>
                   <ChevronRight className="w-4 h-4" />
                 </button>
@@ -414,11 +553,15 @@ const Dashboard = () => {
                     <div className={`w-16 h-16 ${tc.bg.secondary} rounded-full flex items-center justify-center mx-auto mb-4`}>
                       <BarChart3 className={`w-8 h-8 ${tc.text.muted}`} />
                     </div>
-                    <p className={`${tc.text.muted} mb-3`}>No scenarios created yet</p>
-                    <button className={`inline-flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors touch-manipulation ${tc.button.primary}`}>
-                      <Plus className="w-4 h-4" />
-                      <span>Create your first scenario</span>
-                    </button>
+                    <p className={`${tc.text.muted} mb-3`}>
+                      {loading ? 'Loading scenarios...' : 'No scenarios found'}
+                    </p>
+                    {!loading && (
+                      <button className={`inline-flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors touch-manipulation ${tc.button.primary}`}>
+                        <Plus className="w-4 h-4" />
+                        <span>Create your first scenario</span>
+                      </button>
+                    )}
                   </div>
                 ) : (
                   scenarios.slice(0, 5).map((scenario) => (
@@ -431,16 +574,16 @@ const Dashboard = () => {
                           <div className={`w-2 h-2 ${getStatusColor(scenario.status)} rounded-full mt-2 flex-shrink-0`}></div>
                           <div className="min-w-0 flex-1">
                             <p className={`font-medium ${tc.text.primary} text-sm sm:text-base mb-1 truncate`}>
-                              {scenario.name}
+                              {scenario.name || scenario.title || 'Unnamed Scenario'}
                             </p>
                             <div className={`flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs sm:text-sm ${tc.text.muted}`}>
                               <div className="flex items-center space-x-1">
                                 <Clock className="w-3 h-3" />
-                                <span>{getRelativeTimeString(scenario.updated_at)}</span>
+                                <span>{getRelativeTimeString(scenario.updated_at || scenario.updatedAt || scenario.created_at || scenario.createdAt)}</span>
                               </div>
                               <span className="hidden sm:inline">•</span>
                               <span className="capitalize">
-                                {scenario.status}
+                                {scenario.status || 'draft'}
                               </span>
                             </div>
                           </div>
@@ -448,8 +591,8 @@ const Dashboard = () => {
                         
                         <div className="flex items-center space-x-3 sm:space-x-4 flex-shrink-0 ml-3">
                           <div className="text-right">
-                            <span className={`text-xs sm:text-sm font-medium ${getRiskColor(scenario.risk_score || 0)}`}>
-                              {scenario.risk_score ? `${Math.round(scenario.risk_score)}%` : '0%'}
+                            <span className={`text-xs sm:text-sm font-medium ${getRiskColor(scenario.risk_score || scenario.riskScore || 0)}`}>
+                              {scenario.risk_score || scenario.riskScore ? `${Math.round(scenario.risk_score || scenario.riskScore)}%` : '0%'}
                             </span>
                             <p className={`text-xs ${tc.text.muted}`}>Risk</p>
                           </div>
@@ -491,11 +634,22 @@ const Dashboard = () => {
               </div>
 
               <div className={`text-center py-4 sm:py-6 mt-6 border-t ${tc.border.primary}`}>
-                <p className={`${tc.text.muted} text-sm mb-2`}>Distribution based on current events</p>
-                <button className={`inline-flex items-center space-x-1 ${tc.text.accent} hover:${tc.text.accent}/80 text-sm transition-colors touch-manipulation`}>
-                  <span>View detailed analysis</span>
-                  <ChevronRight className="w-3 h-3" />
-                </button>
+                <p className={`${tc.text.muted} text-sm mb-2`}>
+                  {events.length > 0 
+                    ? `Distribution based on ${events.length} events` 
+                    : 'No event data available'
+                  }
+                </p>
+                {events.length > 0 ? (
+                  <button className={`inline-flex items-center space-x-1 ${tc.text.accent} hover:${tc.text.accent}/80 text-sm transition-colors touch-manipulation`}>
+                    <span>View detailed analysis</span>
+                    <ChevronRight className="w-3 h-3" />
+                  </button>
+                ) : (
+                  <p className={`${tc.text.muted} text-xs`}>
+                    Create scenarios and events to see risk distribution
+                  </p>
+                )}
               </div>
             </div>
           </div>
