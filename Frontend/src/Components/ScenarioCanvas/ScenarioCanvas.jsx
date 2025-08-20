@@ -709,7 +709,7 @@ const MonteCarloResultsModal = ({ results, scenarioName, onClose }) => {
               <p className="text-xs text-gray-400">50% of scenarios result in losses below this amount</p>
             </div>
 
-          <div className="bg-gray-700 rounded-lg p-6 border border-gray-600">
+            <div className="bg-gray-700 rounded-lg p-6 border border-gray-600">
               <div className="flex items-center space-x-3 mb-3">
                 <AlertTriangle className="w-8 h-8 text-orange-400" />
                 <div>
@@ -1103,111 +1103,43 @@ const ScenarioCanvasReplica = () => {
           if (riskEventsFound === 0) {
             console.warn('⚠️ No risk events found in any collection after creation attempts');
             
-              // Try one final approach: create directly in the risk_events collection with proper MongoDB format
-              const riskEvents = components.filter(c => c.type === 'event');
-              if (riskEvents.length > 0) {
-                console.log('🔄 Attempting direct MongoDB-style creation with ObjectId...');
-                
-                for (const event of riskEvents) {
-                  try {
-                    // Format data exactly as your backend expects
-                    const mongoRiskEventData = {
-                      scenario_id: currentScenario.id,  // Backend will convert string to ObjectId
-                      name: event.name,
-                      description: event.description || '',
-                      probability: (event.likelihood || 0) * 100,  // Your backend expects percentage
-                      impact_min: (event.severity || event.severityUsd || 0) * 0.5,
-                      impact_max: event.severity || event.severityUsd || 0,
-                      category: event.category || 'operational'
-                    };
-                    
-                    // Try the exact endpoint that should work
-                    const directResponse = await api.post('/risk_events/', mongoRiskEventData);
-                    console.log(`✅ SUCCESS: Created risk event in risk_events collection:`, event.name);
-                  } catch (directError) {
-                    console.error(`❌ Direct creation failed for ${event.name}:`, directError.response?.data || directError.message);
-                    
-                    // If that fails, try a different approach - maybe your backend has different routes
-                    console.log('🔄 Trying alternative routes...');
-                    
-                    // Check if there are routes for creating these entities
-                    const alternativeEndpoints = [
-                      { url: '/risk-events', method: 'POST' },
-                      { url: '/riskevents', method: 'POST' },
-                      { url: `/scenarios/${currentScenario.id}/risk_events`, method: 'POST' }
-                    ];
-                    
-                    for (const endpoint of alternativeEndpoints) {
-                      try {
-                        await api.post(endpoint.url, mongoRiskEventData);
-                        console.log(`✅ Alternative success via ${endpoint.url}:`, event.name);
-                        break;
-                      } catch (altError) {
-                        console.log(`❌ Alternative ${endpoint.url} failed:`, altError.response?.status);
-                      }
-                    }
-                  }
-                }
-                
-                // Also create business assets and defense systems
-                const businessAssets = components.filter(c => c.type === 'asset');
-                for (const asset of businessAssets) {
-                  try {
-                    const mongoAssetData = {
-                      scenario_id: currentScenario.id,
-                      name: asset.name,
-                      description: asset.description || '',
-                      value: asset.valuation || asset.data?.valuation || 0,  // Your backend expects 'value'
-                      criticality: asset.criticality || asset.data?.criticality || 'Medium',
-                      location: asset.location || asset.data?.location || ''
-                    };
-                    
-                    await api.post('/business_assets/', mongoAssetData);
-                    console.log(`✅ Created business asset:`, asset.name);
-                  } catch (assetError) {
-                    console.error(`❌ Business asset creation failed for ${asset.name}:`, assetError.message);
-                  }
-                }
-                
-                const defenseSystems = components.filter(c => c.type === 'defense');
-                for (const defense of defenseSystems) {
-                  try {
-                    const mongoDefenseData = {
-                      scenario_id: currentScenario.id,
-                      name: defense.name,
-                      description: defense.description || '',
-                      effectiveness: (defense.mitigationPct || defense.data?.mitigationPct || 0) * 100,  // Percentage
-                      coverage_percentage: 100,  // Your backend expects this field
-                      cost: defense.annualCostUsd || defense.data?.annualCostUsd || 0,
-                      maintenance_cost: 0  // Your backend uses this in ROI calculation
-                    };
-                    
-                    await api.post('/defense_systems/', mongoDefenseData);
-                    console.log(`✅ Created defense system:`, defense.name);
-                  } catch (defenseError) {
-                    console.error(`❌ Defense system creation failed for ${defense.name}:`, defenseError.message);
-                  }
-                }
-                
-                // Final verification with the exact query your backend uses
+            // Try one final approach: create directly in the risk_events collection with proper MongoDB format
+            const riskEvents = components.filter(c => c.type === 'event');
+            if (riskEvents.length > 0) {
+              console.log('🔄 Attempting direct MongoDB-style creation...');
+              
+              for (const event of riskEvents) {
                 try {
-                  console.log('🔍 Final verification with backend-style query...');
+                  // Format data exactly as MongoDB expects
+                  const mongoRiskEventData = {
+                    scenario_id: currentScenario.id,  // String format that MongoDB can convert
+                    name: event.name,
+                    description: event.description || '',
+                    probability: (event.likelihood || 0) * 100,
+                    impact_min: (event.severity || event.severityUsd || 0) * 0.5,
+                    impact_max: event.severity || event.severityUsd || 0,
+                    category: event.category || 'operational',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                  };
                   
-                  // Check if we can query the data the same way your backend does
-                  const finalCheck = await api.get(`/risk_events/?scenario_id=${currentScenario.id}`);
-                  const finalCount = Array.isArray(finalCheck.data) ? finalCheck.data.length : finalCheck.data?.length || 0;
-                  console.log(`✅ Final verification: ${finalCount} risk events found`);
-                  
-                  if (finalCount > 0) {
-                    console.log('🎉 SUCCESS: Risk events are now in the database and should be found by the analysis!');
-                  } else {
-                    console.warn('⚠️ Still no risk events found. Your backend might need different routes.');
-                    console.warn('💡 Suggestion: Check if your backend has routes for /risk_events/, /business_assets/, /defense_systems/');
-                  }
-                } catch (finalError) {
-                  console.log('❌ Final verification failed:', finalError.message);
+                  // Try the exact collection name your backend expects
+                  const directResponse = await api.post('/risk_events/', mongoRiskEventData);
+                  console.log(`✅ SUCCESS: Created risk event in risk_events collection:`, event.name);
+                } catch (directError) {
+                  console.error(`❌ Direct MongoDB creation failed for ${event.name}:`, directError.response?.data || directError.message);
                 }
               }
+              
+              // Verify one more time
+              try {
+                const finalCheck = await api.get(`/risk_events/?scenario_id=${currentScenario.id}`);
+                const finalCount = finalCheck.data?.length || 0;
+                console.log(`🔍 Final verification: ${finalCount} risk events in risk_events collection`);
+              } catch (finalError) {
+                console.log('❌ Final verification failed:', finalError.message);
+              }
+            }
           }
         } catch (checkError) {
           console.warn('Could not verify risk events creation:', checkError.message);
@@ -1282,30 +1214,35 @@ const ScenarioCanvasReplica = () => {
     const businessAssets = components.filter(c => c.type === 'asset');
     const defenseSystems = components.filter(c => c.type === 'defense');
     
-    console.log('Creating scenario components:', {
+    console.log('Creating scenario components for Monte Carlo:', {
       riskEvents: riskEvents.length,
       businessAssets: businessAssets.length,
       defenseSystems: defenseSystems.length
     });
     
-    // Since the separate APIs might not exist, let's try a direct approach
-    // or fallback to storing the data in the scenario itself
-    
     try {
-      // Try to create risk events using the API
+      // Create risk events with the EXACT fields your Monte Carlo expects
       for (const event of riskEvents) {
         const riskEventData = {
           scenario_id: scenarioId,
           name: event.name,
           description: event.description || '',
-          probability: (event.likelihood || 0) * 100, // Convert back to percentage
-          impact_min: (event.severity || event.severityUsd || 0) * 0.5,
-          impact_max: event.severity || event.severityUsd || 0,
+          // ✅ FIXED: Use the exact field names from Monte Carlo simulation
+          probability: (event.likelihood || 0) * 100, // Monte Carlo expects 'probability'
+          impact_min: (event.severity || event.severityUsd || 0) * 0.3, // Monte Carlo expects 'impact_min'
+          impact_max: event.severity || event.severityUsd || 0, // Monte Carlo expects 'impact_max'
           category: event.category || 'operational'
         };
         
+        console.log(`📊 Creating risk event for Monte Carlo:`, {
+          name: riskEventData.name,
+          probability: riskEventData.probability,
+          impact_min: riskEventData.impact_min,
+          impact_max: riskEventData.impact_max
+        });
+        
         try {
-          // Try to create via API first
+          // Try multiple creation methods
           if (typeof riskEventsAPI !== 'undefined' && riskEventsAPI.create) {
             await riskEventsAPI.create(scenarioId, riskEventData);
             console.log('✓ Created risk event via API:', event.name);
@@ -1315,37 +1252,48 @@ const ScenarioCanvasReplica = () => {
         } catch (apiError) {
           console.warn(`❌ API creation failed for risk event ${event.name}:`, apiError.message);
           
-          // Fallback: Try direct API call
-          try {
-            const response = await api.post(`/scenarios/${scenarioId}/risk-events/`, riskEventData);
-            console.log('✓ Created risk event via direct API:', event.name);
-          } catch (directError) {
-            console.error(`❌ Direct API also failed for risk event ${event.name}:`, directError.message);
-            
-            // Ultimate fallback: Create via generic API if available
+          // Try direct endpoints
+          const endpoints = [
+            `/scenarios/${scenarioId}/risk-events/`,
+            `/risk-events/`,
+            `/risk_events/`
+          ];
+          
+          let created = false;
+          for (const endpoint of endpoints) {
             try {
-              const response = await api.post('/risk-events/', {
-                ...riskEventData,
-                scenario_id: scenarioId
-              });
-              console.log('✓ Created risk event via generic API:', event.name);
-            } catch (genericError) {
-              console.error(`❌ All methods failed for risk event ${event.name}:`, genericError.message);
+              await api.post(endpoint, riskEventData);
+              console.log(`✓ Created risk event via ${endpoint}:`, event.name);
+              created = true;
+              break;
+            } catch (endpointError) {
+              console.log(`❌ Failed ${endpoint}:`, endpointError.response?.status);
             }
+          }
+          
+          if (!created) {
+            console.error(`❌ All creation methods failed for risk event: ${event.name}`);
           }
         }
       }
       
-      // Try to create business assets
+      // Create business assets with the fields your Monte Carlo expects
       for (const asset of businessAssets) {
         const assetData = {
           scenario_id: scenarioId,
           name: asset.name,
           description: asset.description || '',
-          value: asset.valuation || asset.data?.valuation || 0,
+          // ✅ FIXED: Use the exact field names from Monte Carlo simulation
+          value: asset.valuation || asset.data?.valuation || 0, // Monte Carlo expects 'value'
           criticality: asset.criticality || asset.data?.criticality || 'Medium',
           location: asset.location || asset.data?.location || ''
         };
+        
+        console.log(`🏢 Creating business asset for Monte Carlo:`, {
+          name: assetData.name,
+          value: assetData.value,
+          criticality: assetData.criticality
+        });
         
         try {
           if (typeof businessAssetsAPI !== 'undefined' && businessAssetsAPI.create) {
@@ -1355,31 +1303,46 @@ const ScenarioCanvasReplica = () => {
             throw new Error('businessAssetsAPI not available');
           }
         } catch (apiError) {
-          // Try direct API calls as fallback
-          try {
-            await api.post(`/scenarios/${scenarioId}/business-assets/`, assetData);
-            console.log('✓ Created business asset via direct API:', asset.name);
-          } catch (directError) {
+          // Try direct endpoints
+          const endpoints = [
+            `/scenarios/${scenarioId}/business-assets/`,
+            `/business-assets/`,
+            `/business_assets/`
+          ];
+          
+          let created = false;
+          for (const endpoint of endpoints) {
             try {
-              await api.post('/business-assets/', { ...assetData, scenario_id: scenarioId });
-              console.log('✓ Created business asset via generic API:', asset.name);
-            } catch (genericError) {
-              console.error(`❌ All methods failed for business asset ${asset.name}:`, genericError.message);
+              await api.post(endpoint, assetData);
+              console.log(`✓ Created business asset via ${endpoint}:`, asset.name);
+              created = true;
+              break;
+            } catch (endpointError) {
+              console.log(`❌ Failed ${endpoint}:`, endpointError.response?.status);
             }
           }
         }
       }
       
-      // Try to create defense systems
+      // Create defense systems with the EXACT fields your Monte Carlo expects
       for (const defense of defenseSystems) {
         const defenseData = {
           scenario_id: scenarioId,
           name: defense.name,
           description: defense.description || '',
-          effectiveness: (defense.mitigationPct || defense.data?.mitigationPct || 0) * 100,
+          // ✅ FIXED: Use the exact field names from Monte Carlo simulation
+          effectiveness: (defense.mitigationPct || defense.data?.mitigationPct || 0) * 100, // Monte Carlo expects 'effectiveness' as percentage
+          coverage_percentage: 100, // Monte Carlo expects 'coverage_percentage'
           cost: defense.annualCostUsd || defense.data?.annualCostUsd || 0,
-          coverage_percentage: 100
+          maintenance_cost: (defense.annualCostUsd || defense.data?.annualCostUsd || 0) * 0.1 // Add 10% maintenance cost
         };
+        
+        console.log(`🛡️ Creating defense system for Monte Carlo:`, {
+          name: defenseData.name,
+          effectiveness: defenseData.effectiveness,
+          coverage_percentage: defenseData.coverage_percentage,
+          cost: defenseData.cost
+        });
         
         try {
           if (typeof defenseSystemsAPI !== 'undefined' && defenseSystemsAPI.create) {
@@ -1389,16 +1352,22 @@ const ScenarioCanvasReplica = () => {
             throw new Error('defenseSystemsAPI not available');
           }
         } catch (apiError) {
-          // Try direct API calls as fallback
-          try {
-            await api.post(`/scenarios/${scenarioId}/defense-systems/`, defenseData);
-            console.log('✓ Created defense system via direct API:', defense.name);
-          } catch (directError) {
+          // Try direct endpoints
+          const endpoints = [
+            `/scenarios/${scenarioId}/defense-systems/`,
+            `/defense-systems/`,
+            `/defense_systems/`
+          ];
+          
+          let created = false;
+          for (const endpoint of endpoints) {
             try {
-              await api.post('/defense-systems/', { ...defenseData, scenario_id: scenarioId });
-              console.log('✓ Created defense system via generic API:', defense.name);
-            } catch (genericError) {
-              console.error(`❌ All methods failed for defense system ${defense.name}:`, genericError.message);
+              await api.post(endpoint, defenseData);
+              console.log(`✓ Created defense system via ${endpoint}:`, defense.name);
+              created = true;
+              break;
+            } catch (endpointError) {
+              console.log(`❌ Failed ${endpoint}:`, endpointError.response?.status);
             }
           }
         }
@@ -1409,10 +1378,10 @@ const ScenarioCanvasReplica = () => {
       throw error;
     }
     
-    // Wait a moment for the database to sync
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Wait for database synchronization
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
-    console.log('✓ Finished creating scenario components');
+    console.log('✅ Finished creating components with Monte Carlo-compatible fields');
   };
 
   // Helper functions

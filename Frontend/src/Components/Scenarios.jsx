@@ -1,4 +1,4 @@
-// frontend/src/components/Scenarios.jsx - FIXED WITH WORKING EDIT/DELETE
+// frontend/src/components/Scenarios.jsx - CLEANED VERSION WITH NO DUMMY DATA
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { 
@@ -50,7 +50,7 @@ const Scenarios = () => {
       
       let scenariosData = []
       
-      // Handle different response formats from API
+      // Handle different response formats from API - ONLY real data, no fallbacks
       if (response?.success && Array.isArray(response.data)) {
         scenariosData = response.data
       } else if (response?.data && Array.isArray(response.data)) {
@@ -61,7 +61,7 @@ const Scenarios = () => {
         scenariosData = response.scenarios
       } else {
         console.warn('Unexpected API response format:', response)
-        scenariosData = []
+        scenariosData = [] // Keep empty if no valid data
       }
       
       console.log('Processed scenarios data:', scenariosData)
@@ -70,7 +70,7 @@ const Scenarios = () => {
     } catch (error) {
       console.error('Error loading scenarios:', error)
       setError(`Failed to load scenarios: ${error.message}`)
-      setScenarios([])
+      setScenarios([]) // Keep empty on error
     } finally {
       setLoading(false)
     }
@@ -202,7 +202,7 @@ const Scenarios = () => {
     }
   }
 
-  // Calculate real-time stats from actual data
+  // Calculate real-time stats from actual data ONLY
   const calculateStats = () => {
     const total = scenarios.length
     
@@ -248,9 +248,9 @@ const Scenarios = () => {
     return matchesSearch && matchesStatus
   })
 
-  // Helper function to format time ago with real dates
+  // Helper function to format time ago with real dates - NO FALLBACKS
   const formatTimeAgo = (dateString) => {
-    if (!dateString) return '2h ago' // fallback for missing dates
+    if (!dateString) return 'Unknown' // Changed from dummy "2h ago"
     
     try {
       const now = new Date()
@@ -268,23 +268,25 @@ const Scenarios = () => {
       return date.toLocaleDateString()
     } catch (error) {
       console.warn('Invalid date format:', dateString)
-      return '2h ago'
+      return 'Unknown' // Changed from dummy "2h ago"
     }
   }
 
-  // Helper function to format P50 impact with real data
+  // Helper function to format P50 impact with real data - NO FALLBACKS
   const formatP50Impact = (scenario) => {
-    const p50 = scenario.p50_impact || scenario.p50Impact || scenario.median_impact || 0
+    const p50 = scenario.p50_impact || scenario.p50Impact || scenario.median_impact
+    
+    if (!p50 || p50 === 0) {
+      return 'Not calculated' // More honest than showing $0
+    }
     
     if (p50 >= 1000000) {
       return `$${(p50 / 1000000).toFixed(1)}M`
     } else if (p50 >= 1000) {
       return `$${Math.round(p50 / 1000)}K`
-    } else if (p50 > 0) {
+    } else {
       return `$${Math.round(p50)}`
     }
-    
-    return '$0'
   }
 
   // Helper function to get scenario status with real data
@@ -293,13 +295,14 @@ const Scenarios = () => {
     return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()
   }
 
-  // Helper function to get risk events count with real data
+  // Helper function to get risk events count with real data - NO FALLBACKS
   const getRiskEventsCount = (scenario) => {
-    return scenario.risk_events_count || 
+    const count = scenario.risk_events_count || 
            scenario.riskEventsCount || 
            scenario.components?.risk_events?.length || 
-           scenario.risk_events?.length || 
-           1
+           scenario.risk_events?.length
+    
+    return count !== undefined ? count : 0 // Changed from dummy "1"
   }
 
   if (loading) {
@@ -395,7 +398,7 @@ const Scenarios = () => {
           </div>
         </div>
 
-        {/* Stats Cards - Using Real Data */}
+        {/* Stats Cards - Using Real Data ONLY */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className={`
             rounded-lg p-4 border
@@ -487,7 +490,7 @@ const Scenarios = () => {
         </div>
       )}
 
-      {/* Scenarios Grid - Using Real Data */}
+      {/* Scenarios Grid - Using Real Data ONLY */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredScenarios.map((scenario) => {
           const scenarioId = scenario.id || scenario._id || scenario.scenario_id
@@ -543,7 +546,7 @@ const Scenarios = () => {
                     <div className="flex items-center space-x-1">
                       <TrendingUp className={`w-4 h-4 ${themeClasses.text.muted}`} />
                       <span className={themeClasses.text.muted}>
-                        {getRiskEventsCount(scenario)}/10
+                        {getRiskEventsCount(scenario)} events
                       </span>
                     </div>
                   </div>

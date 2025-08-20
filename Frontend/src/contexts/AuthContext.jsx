@@ -1,5 +1,6 @@
 // frontend/src/contexts/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import api from '../services/api'
 
 const AuthContext = createContext()
 
@@ -10,8 +11,6 @@ export const useAuth = () => {
   }
   return context
 }
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://selfless-flow-production.up.railway.app/api'
 
 // Enhanced localStorage utilities for better persistence
 const AuthStorage = {
@@ -86,42 +85,44 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
-        headers: {
-          'Authorization': `Bearer ${savedToken}`,
-          'Content-Type': 'application/json'
-        }
-      })
+      console.log('Checking auth with token:', savedToken?.substring(0, 20) + '...')
+      
+      // Use the api instance which already has proper interceptors
+      const response = await api.get('/auth/me')
+      console.log('Auth check response:', response.data)
+      
+      const data = response.data
+      if (data.success) {
+        const userData = data.data;
+        setUser(userData)
+        setToken(savedToken)
 
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success) {
-          const userData = data.data;
-          setUser(userData)
-          setToken(savedToken)
-
-          // Update localStorage with fresh user data
-          AuthStorage.setUser(userData);
-          AuthStorage.setAuthStatus(true);
-        } else {
-          // Clear invalid session
-          AuthStorage.clearAll();
-          setToken(null)
-          setUser(null)
-        }
+        // Update localStorage with fresh user data
+        AuthStorage.setUser(userData);
+        AuthStorage.setAuthStatus(true);
       } else {
+        console.warn('Auth check failed - invalid response structure')
         // Clear invalid session
         AuthStorage.clearAll();
         setToken(null)
         setUser(null)
       }
     } catch (error) {
-      console.warn('Auth check failed - working offline:', error.message)
-      // For network errors, keep the token but don't clear user data
-      // This allows the app to work offline with cached authentication
-      if (savedToken && AuthStorage.getUser()) {
-        setToken(savedToken)
-        setUser(AuthStorage.getUser())
+      console.error('Auth check failed:', error.response?.status, error.response?.data || error.message)
+      
+      if (error.response?.status === 401) {
+        // Token is invalid, clear it
+        console.log('Token is invalid, clearing auth data')
+        AuthStorage.clearAll();
+        setToken(null)
+        setUser(null)
+      } else {
+        // Network error - keep token for offline use
+        console.warn('Auth check network error, keeping cached data')
+        if (savedToken && AuthStorage.getUser()) {
+          setToken(savedToken)
+          setUser(AuthStorage.getUser())
+        }
       }
     } finally {
       setLoading(false)
@@ -133,18 +134,17 @@ export const AuthProvider = ({ children }) => {
       setLoading(true)
       setError(null)
 
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email, password })
-      })
+      console.log('Attempting login for:', email)
 
-      const data = await response.json()
+      // Use api instance but without token for login
+      const response = await api.post('/auth/login', { email, password })
+      console.log('Login response:', response.data)
 
-      if (response.ok && data.success) {
+      const data = response.data
+      if (data.success) {
         const { access_token, user: userData } = data.data
+        
+        console.log('Login successful, token received:', access_token?.substring(0, 20) + '...')
         
         // Update localStorage
         AuthStorage.setToken(access_token);
@@ -157,12 +157,26 @@ export const AuthProvider = ({ children }) => {
         
         return { success: true, user: userData }
       } else {
-        const errorMessage = data.detail || 'Login failed'
+        const errorMessage = data.detail || data.message || 'Login failed'
         setError(errorMessage)
         return { success: false, error: errorMessage }
       }
     } catch (error) {
-      const errorMessage = 'Network error. Please try again.'
+      console.error('Login error:', error.response?.data || error.message)
+      
+      let errorMessage = 'Login failed'
+      if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Invalid email or password'
+      } else if (error.response?.status >= 500) {
+        errorMessage = 'Server error. Please try again later.'
+      } else if (!error.response) {
+        errorMessage = 'Network error. Please check your connection.'
+      }
+      
       setError(errorMessage)
       return { success: false, error: errorMessage }
     } finally {
@@ -175,17 +189,13 @@ export const AuthProvider = ({ children }) => {
       setLoading(true)
       setError(null)
 
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(userData)
-      })
+      console.log('Attempting registration for:', userData.email)
 
-      const data = await response.json()
+      const response = await api.post('/auth/register', userData)
+      console.log('Register response:', response.data)
 
-      if (response.ok && data.success) {
+      const data = response.data
+      if (data.success) {
         const { access_token, user: newUser } = data.data
         
         // Update localStorage
@@ -199,12 +209,24 @@ export const AuthProvider = ({ children }) => {
         
         return { success: true, user: newUser }
       } else {
-        const errorMessage = data.detail || 'Registration failed'
+        const errorMessage = data.detail || data.message || 'Registration failed'
         setError(errorMessage)
         return { success: false, error: errorMessage }
       }
     } catch (error) {
-      const errorMessage = 'Network error. Please try again.'
+      console.error('Registration error:', error.response?.data || error.message)
+      
+      let errorMessage = 'Registration failed'
+      if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error.response?.status >= 500) {
+        errorMessage = 'Server error. Please try again later.'
+      } else if (!error.response) {
+        errorMessage = 'Network error. Please check your connection.'
+      }
+      
       setError(errorMessage)
       return { success: false, error: errorMessage }
     } finally {
@@ -215,13 +237,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       if (token) {
-        await fetch(`${API_BASE_URL}/auth/logout`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        })
+        await api.post('/auth/logout')
       }
     } catch (error) {
       console.error('Logout API call failed:', error)
@@ -242,18 +258,10 @@ export const AuthProvider = ({ children }) => {
       setLoading(true)
       setError(null)
 
-      const response = await fetch(`${API_BASE_URL}/auth/profile`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(profileData)
-      })
+      const response = await api.put('/auth/profile', profileData)
+      const data = response.data
 
-      const data = await response.json()
-
-      if (response.ok && data.success) {
+      if (data.success) {
         const updatedUser = data.data;
         
         // Update localStorage and state
@@ -262,12 +270,20 @@ export const AuthProvider = ({ children }) => {
         
         return { success: true, user: updatedUser }
       } else {
-        const errorMessage = data.detail || 'Profile update failed'
+        const errorMessage = data.detail || data.message || 'Profile update failed'
         setError(errorMessage)
         return { success: false, error: errorMessage }
       }
     } catch (error) {
-      const errorMessage = 'Network error. Please try again.'
+      console.error('Profile update error:', error.response?.data || error.message)
+      
+      let errorMessage = 'Profile update failed'
+      if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      }
+      
       setError(errorMessage)
       return { success: false, error: errorMessage }
     } finally {
@@ -280,29 +296,29 @@ export const AuthProvider = ({ children }) => {
       setLoading(true)
       setError(null)
 
-      const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          current_password: currentPassword,
-          new_password: newPassword
-        })
+      const response = await api.post('/auth/change-password', {
+        current_password: currentPassword,
+        new_password: newPassword
       })
 
-      const data = await response.json()
-
-      if (response.ok && data.success) {
+      const data = response.data
+      if (data.success) {
         return { success: true, message: data.message }
       } else {
-        const errorMessage = data.detail || 'Password change failed'
+        const errorMessage = data.detail || data.message || 'Password change failed'
         setError(errorMessage)
         return { success: false, error: errorMessage }
       }
     } catch (error) {
-      const errorMessage = 'Network error. Please try again.'
+      console.error('Password change error:', error.response?.data || error.message)
+      
+      let errorMessage = 'Password change failed'
+      if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      }
+      
       setError(errorMessage)
       return { success: false, error: errorMessage }
     } finally {
