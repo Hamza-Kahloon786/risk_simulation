@@ -31,8 +31,6 @@ yarn-debug.log*
 yarn-error.log*
 
 # Environment variables
-.env
-.env.local
 .env.development.local
 .env.test.local
 .env.production.local
@@ -50,3 +48,7 @@ logs/
 # Local development
 .DS_Store
 Thumbs.db
+temp_auto_push.bat
+temp_interactive_push.bat
+branch_structure.json
+config.bat
